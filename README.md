@@ -99,3 +99,27 @@ you can run the following command:
 ```
 rm -rf /tmp/relay /tmp/parachain/
 ```
+
+## Mainnet JSON chainspec generation
+
+1. Generate plain chainspec:
+
+```
+./target/release/logion build-spec --chain main --disable-default-bootnode > ./res/main-plain.json
+```
+
+2. Generate raw chainspec
+
+```
+./target/release/logion build-spec --chain ./res/main-plain.json --raw --disable-default-bootnode > ./res/main-raw.json
+```
+
+3. Generate WASM and genesis state
+
+```
+./target/release/logion export-genesis-wasm --chain ./res/main-raw.json > ./bin/main-wasm
+```
+
+```
+./target/release/logion export-genesis-state --chain ./res/main-raw.json > ./bin/main-genesis
+```
