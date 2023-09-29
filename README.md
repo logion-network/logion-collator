@@ -53,23 +53,23 @@ and did not clean-up the data, you can just start the nodes (steps 3, 4 and 10).
 6. (optional if you did not change the runtime) Generate plain chainspec:
 
 ```
-./target/release/logion build-spec --disable-default-bootnode > ./res/rococo-local-logion-plain.json
+./target/release/logion build-spec --chain local --disable-default-bootnode > ./res/local.json
 ```
 
 7. (optional if you did not change the runtime) Generate raw chainspec
 
 ```
-./target/release/logion build-spec --chain ./res/rococo-local-logion-plain.json --raw --disable-default-bootnode > ./res/rococo-local-logion-raw.json
+./target/release/logion build-spec --chain ./res/local.json --raw --disable-default-bootnode > ./res/local.raw.json
 ```
 
 8. Generate WASM and genesis state
 
 ```
-./target/release/logion export-genesis-wasm --chain ./res/rococo-local-logion-raw.json > ./bin/local-logion-wasm
+./target/release/logion export-genesis-wasm --chain ./res/local.raw.json > ./bin/local-wasm
 ```
 
 ```
-./target/release/logion export-genesis-state --chain ./res/rococo-local-logion-raw.json > ./bin/local-logion-genesis
+./target/release/logion export-genesis-state --chain ./res/local.raw.json > ./bin/local-genesis
 ```
 
 9. Register parachain
@@ -78,8 +78,8 @@ and did not clean-up the data, you can just start the nodes (steps 3, 4 and 10).
 - Go to Developer > Sudo
 - Select extrinsic `paraSudoWrapper.sudoScheduleParaInitialize` and set the following parameters:
     - id: 2000
-    - genesisHead: set file `./bin/local-logion-genesis` generated above
-    - validationCode: set file `./bin/local-logion-wasm` generated above
+    - genesisHead: set file `./bin/local-genesis` generated above
+    - validationCode: set file `./bin/local-wasm` generated above
     - parachain: Yes
 - Submit the extrinsic
 
@@ -100,26 +100,28 @@ you can run the following command:
 rm -rf /tmp/relay /tmp/parachain/
 ```
 
-## Mainnet JSON chainspec generation
+## JSON chainspec generation
+
+Below, `$CHAIN` equals `logion` or `local`. It is recommanded to define the variable before running the commands (`export CHAIN=...`).
 
 1. Generate plain chainspec:
 
 ```
-./target/release/logion build-spec --chain main --disable-default-bootnode > ./res/main-plain.json
+./target/release/logion build-spec --chain $CHAIN --disable-default-bootnode > ./res/$CHAIN.json
 ```
 
 2. Generate raw chainspec
 
 ```
-./target/release/logion build-spec --chain ./res/main-plain.json --raw --disable-default-bootnode > ./res/main-raw.json
+./target/release/logion build-spec --chain ./res/$CHAIN.json --raw --disable-default-bootnode > ./res/$CHAIN.raw.json
 ```
 
 3. Generate WASM and genesis state
 
 ```
-./target/release/logion export-genesis-wasm --chain ./res/main-raw.json > ./bin/main-wasm
+./target/release/logion export-genesis-wasm --chain ./res/$CHAIN.raw.json > ./bin/$CHAIN-wasm
 ```
 
 ```
-./target/release/logion export-genesis-state --chain ./res/main-raw.json > ./bin/main-genesis
+./target/release/logion export-genesis-state --chain ./res/$CHAIN.raw.json > ./bin/$CHAIN-genesis
 ```
