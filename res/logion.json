@@ -6,6 +6,7 @@
   "telemetryEndpoints": null,
   "protocolId": "logion",
   "properties": {
+    "ss58Format": 2021,
     "tokenDecimals": 18,
     "tokenSymbol": "LGNT"
   },
@@ -24,7 +25,7 @@
       "balances": {
         "balances": [
           [
-            "5FUg3QWfipPf8yKv5hMK6wQf8nn6og9BbRNcr3Y8CwUJwTh9",
+            "5GzrECvUzFng58zzFvqVJvpE2MRnjU9vgh4iJMhqrLBSRRAv",
             1000000000000000000000000000
           ]
         ]
@@ -33,7 +34,7 @@
         "multiplier": "1000000000000000000"
       },
       "sudo": {
-        "key": "5FUg3QWfipPf8yKv5hMK6wQf8nn6og9BbRNcr3Y8CwUJwTh9"
+        "key": "5GzrECvUzFng58zzFvqVJvpE2MRnjU9vgh4iJMhqrLBSRRAv"
       },
       "collatorSelection": {
         "invulnerables": [

@@ -29,7 +29,7 @@ fi
 ../polkadot/target/release/polkadot \
     --$1 \
     --base-path /tmp/relay/$1 \
-    --chain ./res/raw-local-chainspec.json \
+    --chain ./res/local-chainspec.raw.json \
     --port $P2P_PORT \
     --rpc-port $RPC_PORT \
     $OTHER_OPTIONS

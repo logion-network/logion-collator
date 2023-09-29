@@ -1,5 +1,5 @@
 use cumulus_primitives_core::ParaId;
-use logion_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, LGNT};
+use logion_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, LGNT, SS58Prefix};
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -62,8 +62,8 @@ pub fn template_session_keys(keys: AuraId) -> logion_runtime::SessionKeys {
 	logion_runtime::SessionKeys { aura: keys }
 }
 
-pub fn main_config() -> ChainSpec {
-	const ROOT_PUBLIC_SR25519: &str = "5FUg3QWfipPf8yKv5hMK6wQf8nn6og9BbRNcr3Y8CwUJwTh9";
+pub fn logion_config() -> ChainSpec {
+	const ROOT_PUBLIC_SR25519: &str = "5GzrECvUzFng58zzFvqVJvpE2MRnjU9vgh4iJMhqrLBSRRAv";
 
 	const NODE01_PUBLIC_SR25519: &str = "5DjzFDhFidvGCuuy6i8Lsi4XyruYjxTTkJKb1o7XzVdMNPVb";
 	const NODE02_PUBLIC_SR25519: &str = "5DoD9n61SssFiWQDTD7bz1eX3KCxZJ6trVj2GsDwMi2PqP85";
@@ -168,7 +168,7 @@ fn main_para_id() -> u32 {
 
 const DEFAULT_TEST_BALANCE: Balance = 1 << 60;
 
-pub fn local_testnet_config() -> ChainSpec {
+pub fn local_config() -> ChainSpec {
 	ChainSpec::from_genesis(
 		// Name
 		"Local Logion",
@@ -314,6 +314,7 @@ fn default_properties(symbol: &str) -> sc_service::Properties {
 	let mut props : sc_service::Properties = sc_service::Properties::new();
 	props.insert("tokenSymbol".into(), symbol.into());
 	props.insert("tokenDecimals".into(), 18.into());
+	props.insert("ss58Format".into(), SS58Prefix::get().into());
 	return props;
 }
 
