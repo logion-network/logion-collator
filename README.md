@@ -6,7 +6,7 @@ Logion is not yet a parachain. It relies on a production-ready (i.e. mainnet) Su
 solochain (see runtime [here](https://github.com/logion-network/logion-node)). The purpose of
 this project is to follow the evolution of Logion's parachain runtime in the process of
 migrating from the solochain to the parachain. It also enabled to build the runtime
-and genesis state for the crowd loan.
+and genesis state for the crowdloan.
 
 [Logion collator node prototype](https://github.com/logion-network/logion-collator-prototype) is aligned,
 in terms of features, with the solochain runtime and is a better representation of what this runtime
@@ -36,43 +36,47 @@ for a step-by-step guide.
 Below steps show how to instantiate a local logion parachain and its relay chain. If you already followed those steps
 and did not clean-up the data, you can just start the nodes (steps 3, 4 and 10).
 
-1. If not already done, build your relay chain node with command `./scripts/build_relay_chain.sh`
+1. If not already done, download polkadot binaries with command `./scripts/download_polkadot.sh`
 
-2. If not already done, build logion collator with command `cargo build --release`
+2. If relevant (e.g. after an upgrade), regenerate relay chainspec
 
-3. Run validator alice with command `./scripts/run_validator.sh alice`
+```
+./bin/polkadot build-spec --chain rococo-local --disable-default-bootnode > ./res/local-chainspec.json
+./bin/polkadot build-spec --chain ./res/local-chainspec.json --raw --disable-default-bootnode > ./res/local-chainspec.raw.json
+```
 
-4. Run validator bob with command `./scripts/run_validator.sh bob`
+3. If not already done, build logion collator with command `cargo build --release`
 
-5. Reserve para ID
+4. Run validator alice with command `./scripts/run_validator.sh alice`
+
+5. Run validator bob with command `./scripts/run_validator.sh bob`
+
+6. Reserve para ID
 
 - With [Polkadot.js](https://polkadot.js.org/apps), connect to the local relay chain (`ws://localhost:9944`)
 - Go to Network > Parachains > Parathreads
 - Click on "+ ParaID" and, with Charlie, register para ID 2000
 
-6. (optional if you did not change the runtime) Generate plain chainspec:
+7. (optional if you did not change the runtime) Generate plain chainspec:
 
 ```
 ./target/release/logion build-spec --chain local --disable-default-bootnode > ./res/local.json
 ```
 
-7. (optional if you did not change the runtime) Generate raw chainspec
+8. (optional if you did not change the runtime) Generate raw chainspec
 
 ```
 ./target/release/logion build-spec --chain ./res/local.json --raw --disable-default-bootnode > ./res/local.raw.json
 ```
 
-8. Generate WASM and genesis state
+9. Generate WASM and genesis state
 
 ```
 ./target/release/logion export-genesis-wasm --chain ./res/local.raw.json > ./bin/local-wasm
-```
-
-```
 ./target/release/logion export-genesis-state --chain ./res/local.raw.json > ./bin/local-genesis
 ```
 
-9. Register parachain
+10. Register parachain
 
 - With [Polkadot.js](https://polkadot.js.org/apps), connect to the local relay chain (`ws://localhost:9944`)
 - Go to Developer > Sudo
@@ -83,13 +87,13 @@ and did not clean-up the data, you can just start the nodes (steps 3, 4 and 10).
     - parachain: Yes
 - Submit the extrinsic
 
-10. Run collator with command `./scripts/run_collator.sh`
+11. Run collator with command `./scripts/run_collator.sh`
 
-11. Wait for the collator to start producing blocks (spy the parachain's best and finalized block in the logs
+12. Wait for the collator to start producing blocks (spy the parachain's best and finalized block in the logs
 or via Polkadot.js's dashboard: Network > Parachains), this may take some time (around 3 minutes). Also, block production
 may not be stable at the beginning. Again, waiting for a couple of minutes should be enough.
 
-12. You may start interacting with the logion parachain using Polkadot.js and connecting to `ws://localhost:8844`.
+13. You may start interacting with the logion parachain using Polkadot.js and connecting to `ws://localhost:8844`.
 
 ### Clean-up
 

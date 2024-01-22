@@ -1,3 +1,7 @@
+.github
+.vscode
+.settings
+.project
 **/target/
 .cargo
 bin/
