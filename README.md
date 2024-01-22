@@ -64,3 +64,35 @@ Below, `$CHAIN` is one of `logion`, `logion-dev`, `logion-test` or `local`. It i
   - `checkVersion`: Yes
 - `parachainSystem.enactAuthorizedUpgrade(code)`
   - `code`: the compressed runtime produced by `srtool`
+
+## Try Runtime
+
+`try-runtime` tool enables the testing of a new runtime against real data.
+
+### Test a runtime upgrade
+
+Generally, what's tested here is one or several storage migrations activated by the new runtime or any Polkadot upgrade.
+
+If not yet done, the [Substrate Try Runtime CLI](https://github.com/paritytech/try-runtime-cli) must be installed:
+
+```sh
+cargo install --git https://github.com/paritytech/try-runtime-cli --locked
+```
+
+If not yet done, the runtime has to be built with the `try-runtime` feature:
+
+```sh
+cargo build --release --features=try-runtime
+```
+
+It can then be tested by executing the following command:
+
+```sh
+try-runtime --runtime target/release/wbuild/logion-runtime/logion_runtime.compact.compressed.wasm on-runtime-upgrade live --uri wss://para-rpc01.logion.network:443
+```
+
+This will:
+- connect to RPC node
+- download current state
+- execute the upgrade
+- run pallets' `post_upgrade` hook
