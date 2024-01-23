@@ -102,7 +102,7 @@ rm -rf /tmp/relay /tmp/parachain/
 
 ## JSON chainspec generation
 
-Below, `$CHAIN` equals `logion` or `local`. It is recommanded to define the variable before running the commands (`export CHAIN=...`).
+Below, `$CHAIN` is one of `logion`, `logion-dev`, `logion-test` or `local`. It is recommanded to define the variable before running the commands (`export CHAIN=...`).
 
 1. Generate plain chainspec:
 
