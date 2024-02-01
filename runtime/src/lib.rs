@@ -15,8 +15,8 @@ use sp_core::{crypto::KeyTypeId, H160, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount,
-		One, Verify
+		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT,
+		ConvertInto, IdentifyAccount, One, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
@@ -31,7 +31,10 @@ use frame_support::{
 	construct_runtime,
 	dispatch::DispatchClass,
 	parameter_types,
-	traits::{ConstBool, ConstU32, ConstU64, ConstU8, Currency, EitherOfDiverse, Everything, Imbalance, OnUnbalanced},
+	traits::{
+		ConstBool, ConstU32, ConstU64, ConstU8, Currency, EitherOfDiverse,
+		Everything, OnUnbalanced, WithdrawReasons,
+	},
 	weights::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight,
 	},
@@ -161,7 +164,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("logion"),
 	impl_name: create_runtime_str!("logion"),
 	authoring_version: 1,
-	spec_version: 1,
+	spec_version: 2,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -334,26 +337,13 @@ impl pallet_balances::Config for Runtime {
 	type MaxFreezes = ConstU32<0>;
 }
 
-parameter_types! {
-    pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-    pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
-	pub const InclusionFeesToBurnPercent: u32 = 100;
-	pub const InclusionFeesTreasuryPercent: u32 = 0; // Inclusion fees disabled for the moment
-}
-
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
 pub struct DealWithInclusionFees;
-
 impl OnUnbalanced<NegativeImbalance> for DealWithInclusionFees {
 
 	fn on_nonzero_unbalanced(fees: NegativeImbalance) {
-
-		let (to_burn, treasury) = fees.ration(InclusionFeesToBurnPercent::get(), InclusionFeesTreasuryPercent::get());
-		drop(to_burn);
-		if treasury != NegativeImbalance::zero() {
-			Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), treasury);
-		}
+		drop(fees); // Disable fees distribution for the moment
 	}
 }
 
@@ -477,6 +467,81 @@ impl pallet_sudo::Config for Runtime {
 	type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const LogionTreasuryPalletId: PalletId = PalletId(*b"lg/lgtrs");
+    pub LogionTreasuryAccountId: AccountId = LogionTreasuryPalletId::get().into_account_truncating();
+    pub const CommunityTreasuryPalletId: PalletId = PalletId(*b"lg/cmtrs");
+    pub CommunityTreasuryAccountId: AccountId = CommunityTreasuryPalletId::get().into_account_truncating();
+
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub const ProposalBondMinimum: Balance = 100 * LGNT;
+    pub const SpendPeriod: BlockNumber = 1 * DAYS;
+	pub const SpendPayoutPeriod: BlockNumber = 30 * DAYS;
+}
+
+type LogionTreasuryType = pallet_treasury::Instance1;
+impl pallet_treasury::Config<LogionTreasuryType> for Runtime {
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type RuntimeEvent = RuntimeEvent;
+	type OnSlash = LogionTreasury;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ();
+	type SpendPeriod = SpendPeriod;
+	type Burn = ();
+	type PalletId = LogionTreasuryPalletId;
+	type BurnDestination = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>; // Benchmark broken
+	type SpendFunds = ();
+	type MaxApprovals = ConstU32<100>;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+}
+
+type CommunityTreasuryType = pallet_treasury::Instance2;
+impl pallet_treasury::Config<CommunityTreasuryType> for Runtime {
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type RuntimeEvent = RuntimeEvent;
+	type OnSlash = CommunityTreasury;
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMaximum = ();
+	type SpendPeriod = SpendPeriod;
+	type Burn = ();
+	type PalletId = CommunityTreasuryPalletId;
+	type BurnDestination = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>; // Benchmark broken
+	type SpendFunds = ();
+	type MaxApprovals = ConstU32<100>;
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+}
+
+impl pallet_utility::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const MinVestedTransfer: Balance = 1 * LGNT;
+	pub UnvestedFundsAllowedWithdrawReasons: WithdrawReasons =
+		WithdrawReasons::except(WithdrawReasons::TRANSFER | WithdrawReasons::RESERVE);
+}
+
+impl pallet_vesting::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type BlockNumberToBalance = ConvertInto;
+	type MinVestedTransfer = MinVestedTransfer;
+	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+	type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
+	const MAX_VESTING_SCHEDULES: u32 = 28;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -492,6 +557,8 @@ construct_runtime!(
 
 		// Governance
 		Sudo: pallet_sudo = 15,
+		LogionTreasury: pallet_treasury::<Instance1> = 16,
+		CommunityTreasury: pallet_treasury::<Instance2> = 17,
 
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship = 20,
@@ -505,6 +572,12 @@ construct_runtime!(
 		PolkadotXcm: pallet_xcm = 31,
 		CumulusXcm: cumulus_pallet_xcm = 32,
 		DmpQueue: cumulus_pallet_dmp_queue = 33,
+
+		// Misc helpers.
+		Utility: pallet_utility = 40,
+
+		// Vesting.
+		Vesting: pallet_vesting = 50,
 	}
 );
 

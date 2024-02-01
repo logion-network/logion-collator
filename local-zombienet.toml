@@ -1,0 +1,22 @@
+[settings]
+provider = "native"
+
+[relaychain]
+default_command = "./bin/polkadot"
+chain = "rococo-local"
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+[[parachains]]
+id = 2000
+
+  [parachains.collator]
+  name = "collator01"
+  chain = "local"
+  command = "./target/release/logion"
