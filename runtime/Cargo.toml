@@ -1,6 +1,6 @@
 [package]
 name = "logion-runtime"
-version = "0.1.0"
+version = "0.2.0"
 authors = ['Logion Team <https://github.com/logion-network>']
 description = "The Logion Collator Runtime."
 license = "Apache 2.0"
@@ -15,6 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
 [dependencies]
+ahash = { version = "=0.8.6", default-features = false }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.4.1", optional = true }
 log = { version = "0.4.20", default-features = false }
@@ -37,6 +38,9 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", default-feature
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+pallet-utility = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+pallet-vesting = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
@@ -76,6 +80,7 @@ default = [
 	"std",
 ]
 std = [
+	"ahash/std",
 	"codec/std",
 	"log/std",
 	"scale-info/std",

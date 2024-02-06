@@ -505,6 +505,9 @@ fn build_genesis_config(
 			key: Some(root_key),
 		},
 		transaction_payment: Default::default(),
+		community_treasury: Default::default(),
+		logion_treasury: Default::default(),
+		vesting: Default::default(),
 	}
 }
 

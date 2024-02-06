@@ -1,6 +1,6 @@
 [package]
 name = "logion"
-version = "0.1.0"
+version = "0.2.0"
 authors = ['Logion Team <https://github.com/logion-network>']
 description = "The logion Collator Node."
 license = "Apache 2.0"
