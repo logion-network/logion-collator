@@ -260,11 +260,13 @@ pub fn logion_dev_config() -> ChainSpec {
 	testnet_config(
 		"Logion DEV",
 		"logion_dev",
-		"LGNTD"
+		"LGNTD",
+		"5FneAsYfxt1kDMR36j9bpYKx6HcqSs94x8YbCV9EsxXDHeKJ",
 	)
 }
 
-fn testnet_config(name: &str, id: &str, symbol: &str) -> ChainSpec {
+fn testnet_config(name: &str, id: &str, symbol: &str, root_ref: &str) -> ChainSpec {
+	let root = String::from(root_ref);
 	ChainSpec::from_genesis(
 		name,
 		id,
@@ -335,9 +337,13 @@ fn testnet_config(name: &str, id: &str, symbol: &str) -> ChainSpec {
 						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 						DEFAULT_TEST_BALANCE
 					),
+					(
+						AccountId::from_str(&root).unwrap(),
+						1_000_000_000 * LGNT,
+					),
 				],
 				test_parachain_id(),
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				AccountId::from_str(&root).unwrap(),
 			)
 		},
 		// Bootnodes
@@ -345,7 +351,7 @@ fn testnet_config(name: &str, id: &str, symbol: &str) -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("logion"),
+		Some(id),
 		// Fork ID
 		None,
 		// Properties
@@ -362,7 +368,8 @@ pub fn logion_test_config() -> ChainSpec {
 	testnet_config(
 		"Logion TEST",
 		"logion_test",
-		"LGNTT"
+		"LGNTT",
+		"5FvTEcjmz4CpyCJCV1q4SeAwq4hn7HpoFd9ymUsivLGt9Y6T",
 	)
 }
 
