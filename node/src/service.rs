@@ -405,7 +405,7 @@ fn build_consensus(
 						relay_parent,
 						&relay_chain_interface,
 						&validation_data,
-						3341.into(),
+						para_id,
 					)
 					.await;
 				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
