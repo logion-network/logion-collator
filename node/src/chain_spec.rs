@@ -8,8 +8,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-	sc_service::GenericChainSpec<logion_runtime::RuntimeGenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 
 /// The default XCM version to set in genesis config.
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
@@ -78,88 +77,80 @@ pub fn logion_config() -> ChainSpec {
 	const NODE11_PUBLIC_SR25519: &str = "5DRbgvZC3LEeJmRe893Q3UEwP2H1DPv5x8ofFgcxihCLu3oL";
 	const NODE12_PUBLIC_SR25519: &str = "5F6h3kuXnhpwkVzDKRd65jrSu53UecKNRdHcgCGFiAbAPWMt";
 
-	ChainSpec::from_genesis(
-		"logion network",
-		"logion",
-		ChainType::Live,
-		move || {
-			build_genesis_config(
-				vec![
-					(
-						AccountId::from_str(NODE01_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE01_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE02_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE02_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE03_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE03_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE04_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE04_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE05_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE05_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE06_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE06_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE07_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE07_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE08_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE08_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE09_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE09_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE10_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE10_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE11_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE11_PUBLIC_SR25519).unwrap()),
-					),
-					(
-						AccountId::from_str(NODE12_PUBLIC_SR25519).unwrap(),
-						AuraId::from(sr25519::Public::from_str(NODE12_PUBLIC_SR25519).unwrap()),
-					),
-				],
-				vec![
-					(
-						AccountId::from_str(ROOT_PUBLIC_SR25519).unwrap(),
-						1_000_000_000 * LGNT,
-					),
-				],
-				main_para_id().into(),
-				AccountId::from_str(ROOT_PUBLIC_SR25519).unwrap(),
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("logion"),
-		// Fork ID
-		None,
-		// Properties
-		Some(default_properties("LGNT")),
-		// Extensions
+	ChainSpec::builder(
+		logion_runtime::WASM_BINARY
+			.expect("WASM binary was not built, please build it!"),
 		Extensions {
 			relay_chain: "polkadot".into(),
 			para_id: main_para_id(),
 		},
 	)
+	.with_name("logion network")
+	.with_id("logion")
+	.with_protocol_id("logion")
+	.with_chain_type(ChainType::Live)
+	.with_genesis_config_patch(build_genesis_config(
+		vec![
+			(
+				AccountId::from_str(NODE01_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE01_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE02_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE02_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE03_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE03_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE04_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE04_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE05_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE05_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE06_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE06_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE07_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE07_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE08_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE08_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE09_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE09_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE10_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE10_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE11_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE11_PUBLIC_SR25519).unwrap()),
+			),
+			(
+				AccountId::from_str(NODE12_PUBLIC_SR25519).unwrap(),
+				AuraId::from(sr25519::Public::from_str(NODE12_PUBLIC_SR25519).unwrap()),
+			),
+		],
+		vec![
+			(
+				AccountId::from_str(ROOT_PUBLIC_SR25519).unwrap(),
+				1_000_000_000 * LGNT,
+			),
+		],
+		main_para_id().into(),
+		AccountId::from_str(ROOT_PUBLIC_SR25519).unwrap(),
+	))
+	.with_properties(default_properties("LGNT"))
+	.build()
 }
 
 fn main_para_id() -> u32 {
@@ -169,91 +160,81 @@ fn main_para_id() -> u32 {
 const DEFAULT_TEST_BALANCE: Balance = 1 << 60;
 
 pub fn development_config() -> ChainSpec {
-	ChainSpec::from_genesis(
-		// Name
-		"Local Logion",
-		// ID
-		"local_logion",
-		ChainType::Development,
-		move || {
-			build_genesis_config(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-				],
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Dave"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Eve"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-				],
-				test_parachain_id(),
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("logion"),
-		// Fork ID
-		None,
-		// Properties
-		Some(default_properties("LGNTD")),
-		// Extensions
-		Extensions {
-			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
-			para_id: test_parachain_id().into(),
-		},
-	)
+    ChainSpec::builder(
+        logion_runtime::WASM_BINARY
+            .expect("WASM binary was not built, please build it!"),
+        Extensions {
+            relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+            para_id: test_parachain_id().into(),
+        },
+    )
+    .with_name("Local Logion")
+    .with_id("local_logion")
+    .with_protocol_id("logion")
+    .with_chain_type(ChainType::Development)
+    .with_genesis_config_patch(build_genesis_config(
+        // initial collators.
+        vec![
+            (
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_collator_keys_from_seed("Alice"),
+            ),
+        ],
+        vec![
+            (
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Dave"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Eve"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                DEFAULT_TEST_BALANCE
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+                DEFAULT_TEST_BALANCE
+            ),
+        ],
+        test_parachain_id(),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
+    ))
+    .with_properties(default_properties("LGNT"))
+    .build()
 }
 
 pub fn logion_dev_config() -> ChainSpec {
@@ -266,102 +247,94 @@ pub fn logion_dev_config() -> ChainSpec {
 }
 
 fn testnet_config(name: &str, id: &str, symbol: &str, root_ref: &str) -> ChainSpec {
-	let root = String::from(root_ref);
-	ChainSpec::from_genesis(
-		name,
-		id,
-		ChainType::Live,
-		move || {
-			build_genesis_config(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						get_collator_keys_from_seed("Charlie"),
-					),
-				],
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Dave"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Eve"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						AccountId::from_str(&root).unwrap(),
-						1_000_000_000 * LGNT,
-					),
-				],
-				test_parachain_id(),
-				AccountId::from_str(&root).unwrap(),
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some(id),
-		// Fork ID
-		None,
-		// Properties
-		Some(default_properties(symbol)),
-		// Extensions
-		Extensions {
-			relay_chain: "rococo_local_testnet".into(),
-			para_id: test_parachain_id().into(),
-		},
-	)
+    let root = String::from(root_ref);
+    ChainSpec::builder(
+        logion_runtime::WASM_BINARY
+            .expect("WASM binary was not built, please build it!"),
+        Extensions {
+            relay_chain: "rococo_local_testnet".into(),
+            para_id: test_parachain_id().into(),
+        },
+    )
+        .with_name(name)
+        .with_id(id)
+        .with_chain_type(ChainType::Live)
+        .with_genesis_config_patch(build_genesis_config(
+            // initial collators.
+            vec![
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    get_collator_keys_from_seed("Alice"),
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    get_collator_keys_from_seed("Bob"),
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    get_collator_keys_from_seed("Charlie"),
+                ),
+            ],
+            vec![
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Dave"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Eve"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+                    DEFAULT_TEST_BALANCE
+                ),
+                (
+                    AccountId::from_str(&root).unwrap(),
+                    1_000_000_000 * LGNT,
+                ),
+            ],
+            test_parachain_id(),
+            AccountId::from_str(&root).unwrap(),
+        ))
+        .with_protocol_id(id)
+        .with_properties(default_properties(symbol))
+        .build()
 }
 
 pub fn logion_test_config() -> ChainSpec {
@@ -374,91 +347,81 @@ pub fn logion_test_config() -> ChainSpec {
 }
 
 pub fn local_config() -> ChainSpec {
-	ChainSpec::from_genesis(
-		// Name
-		"Local Logion",
-		// ID
-		"local_logion",
-		ChainType::Local,
-		move || {
-			build_genesis_config(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-				],
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Dave"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Eve"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-						DEFAULT_TEST_BALANCE
-					),
-				],
-				test_parachain_id(),
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("logion"),
-		// Fork ID
-		None,
-		// Properties
-		Some(default_properties("LGNT")),
-		// Extensions
+	ChainSpec::builder(
+		logion_runtime::WASM_BINARY
+			.expect("WASM binary was not built, please build it!"),
 		Extensions {
 			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
 			para_id: test_parachain_id().into(),
 		},
 	)
+	.with_name("Local Logion")
+	.with_id("local_logion")
+	.with_protocol_id("logion")
+	.with_chain_type(ChainType::Local)
+	.with_genesis_config_patch(build_genesis_config(
+		// initial collators.
+		vec![
+			(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_collator_keys_from_seed("Alice"),
+			),
+		],
+		vec![
+			(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Dave"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Eve"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+				DEFAULT_TEST_BALANCE
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+				DEFAULT_TEST_BALANCE
+			),
+		],
+		test_parachain_id(),
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+	))
+	.with_properties(default_properties("LGNT"))
+	.build()
 }
 
 fn build_genesis_config(
@@ -466,28 +429,20 @@ fn build_genesis_config(
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	id: ParaId,
 	root_key: AccountId,
-) -> logion_runtime::RuntimeGenesisConfig {
-	logion_runtime::RuntimeGenesisConfig {
-		system: logion_runtime::SystemConfig {
-			code: logion_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
+) -> serde_json::Value {
+	serde_json::json!({
+		"balances": {
+			"balances": endowed_accounts.iter().cloned().map(|k| (k.0, k.1)).collect::<Vec<_>>(),
 		},
-		balances: logion_runtime::BalancesConfig {
-			balances: endowed_accounts.iter().cloned().map(|k| (k.0, k.1)).collect(),
+		"parachainInfo": {
+			"parachainId": id,
 		},
-		parachain_info: logion_runtime::ParachainInfoConfig {
-			parachain_id: id,
-			..Default::default()
+		"collatorSelection": {
+			"invulnerables": invulnerables.iter().cloned().map(|(acc, _)| acc).collect::<Vec<_>>(),
+			"candidacyBond": EXISTENTIAL_DEPOSIT * 16,
 		},
-		collator_selection: logion_runtime::CollatorSelectionConfig {
-			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
-			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,
-			..Default::default()
-		},
-		session: logion_runtime::SessionConfig {
-			keys: invulnerables
+		"session": {
+			"keys": invulnerables
 				.into_iter()
 				.map(|(acc, aura)| {
 					(
@@ -496,26 +451,15 @@ fn build_genesis_config(
 						template_session_keys(aura), // session keys
 					)
 				})
-				.collect(),
+				.collect::<Vec<_>>(),
 		},
-		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
-		// of this.
-		aura: Default::default(),
-		aura_ext: Default::default(),
-		parachain_system: Default::default(),
-		polkadot_xcm: logion_runtime::PolkadotXcmConfig {
-			safe_xcm_version: Some(SAFE_XCM_VERSION),
-			..Default::default()
+		"polkadotXcm": {
+			"safeXcmVersion": Some(SAFE_XCM_VERSION),
 		},
-		sudo: logion_runtime::SudoConfig {
-			// Assign network admin rights.
-			key: Some(root_key),
+		"sudo": {
+			"key": Some(root_key),
 		},
-		transaction_payment: Default::default(),
-		community_treasury: Default::default(),
-		logion_treasury: Default::default(),
-		vesting: Default::default(),
-	}
+	})
 }
 
 fn default_properties(symbol: &str) -> sc_service::Properties {
