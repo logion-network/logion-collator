@@ -12,7 +12,7 @@ migrating from the solochain to the parachain.
 Logion's [white paper](https://docs.logion.network/logion-white-paper/) describes all the aspects that
 will be/are implemented by this runtime.
 
-In particular, you will find there a descripiton of Logion's [tokenomics](https://docs.logion.network/logion-white-paper/tokenomics/introduction-to-logion-tokenomics)
+In particular, you will find there a description of Logion's [tokenomics](https://docs.logion.network/logion-white-paper/tokenomics/introduction-to-logion-tokenomics)
 and future [governance](https://docs.logion.network/logion-white-paper/governance/the-logion-governance-model-in-a-nutshell).
 
 ## Test locally
@@ -26,12 +26,13 @@ Install [Zombienet](https://github.com/paritytech/zombienet).
 1. If not already done, download polkadot binaries with command `./scripts/download_polkadot.sh`
 
 2. If not already done, build logion collator with command `cargo build --release`
+   or download a pre-compiled binary with `./scripts/download_logion.sh`
 
-3. Run `$ZOMBIENET spawn local-zombienet.toml` where `$ZOMBIENET` is the path to Zombienet binary
+3. Run `$ZOMBIENET spawn local-zombienet.toml` where `$ZOMBIENET` is the path to the Zombienet binary
 
 ## JSON chainspec generation
 
-Below, `$CHAIN` is one of `logion`, `logion-dev`, `logion-test` or `local`. It is recommanded to define the variable before running the commands (`export CHAIN=...`).
+Below, `$CHAIN` is one of `logion`, `logion-dev`, `logion-test` or `local`. It is recommended to define the variable before running the commands (`export CHAIN=...`).
 
 1. Generate plain chainspec:
 
@@ -58,7 +59,7 @@ Below, `$CHAIN` is one of `logion`, `logion-dev`, `logion-test` or `local`. It i
 ## Deploy an upgrade
 
 - Build using [`srtool`](https://docs.substrate.io/reference/command-line-tools/srtool/)
-  - `srtool build --root --package logion-runtime --runtime-dir runtime`
+  - `cp rust-toolchain.toml runtime/ ; srtool build --root --package logion-runtime --runtime-dir runtime ; rm runtime/rust-toolchain.toml`
 - `parachainSystem.authorizeUpgrade(codeHash, checkVersion)`
   - `codeHash`: `BLAKE2_256` field of compressed runtime in `srtool` build output
   - `checkVersion`: Yes
