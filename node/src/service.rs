@@ -59,23 +59,21 @@ type ParachainBackend = TFullBackend<Block>;
 
 type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, ParachainBackend>;
 
+/// Assembly of PartialComponents (enough to run chain ops subcommands)
+pub type Service = PartialComponents<
+	ParachainClient,
+	ParachainBackend,
+	(),
+	sc_consensus::DefaultImportQueue<Block>,
+	sc_transaction_pool::FullPool<Block, ParachainClient>,
+	(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
+>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
-pub fn new_partial(
-	config: &Configuration,
-) -> Result<
-	PartialComponents<
-		ParachainClient,
-		ParachainBackend,
-		(),
-		sc_consensus::DefaultImportQueue<Block>,
-		sc_transaction_pool::FullPool<Block, ParachainClient>,
-		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
-	>,
-	sc_service::Error,
-> {
+pub fn new_partial(config: &Configuration) -> Result<Service, sc_service::Error> {
 	let telemetry = config
 		.telemetry_endpoints
 		.clone()
@@ -175,8 +173,8 @@ async fn start_node_impl(
 		collator_options.clone(),
 		hwbench.clone(),
 	)
-	.await
-	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
+		.await
+		.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let validator = parachain_config.role.is_authority();
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
@@ -195,7 +193,7 @@ async fn start_node_impl(
 			import_queue: params.import_queue,
 			sybil_resistance_level: CollatorSybilResistance::Resistant, // because of Aura
 		})
-		.await?;
+			.await?;
 
 	if parachain_config.offchain_worker.enabled {
 		use futures::FutureExt;
@@ -215,8 +213,8 @@ async fn start_node_impl(
 				enable_http_requests: false,
 				custom_extensions: move |_| vec![],
 			})
-			.run(client.clone(), task_manager.spawn_handle())
-			.boxed(),
+				.run(client.clone(), task_manager.spawn_handle())
+				.boxed(),
 		);
 	}
 

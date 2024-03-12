@@ -10,9 +10,10 @@ mod weights;
 pub mod xcm_config;
 
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+use cumulus_pallet_xcmp_queue::Config;
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, H160, OpaqueMetadata};
+use sp_core::{crypto::KeyTypeId, Get, H160, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
@@ -45,6 +46,8 @@ use frame_support::{
 	},
 	PalletId,
 };
+use frame_support::__private::sp_io;
+use frame_support::traits::OnRuntimeUpgrade;
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -53,6 +56,7 @@ use pallet_transaction_payment::{CurrencyAdapter, Multiplier};
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_io::{storage::clear_prefix, KillStorageResult};
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
@@ -61,6 +65,7 @@ pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
+use sp_core::bytes::from_hex;
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
@@ -132,11 +137,36 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
+pub struct ClearHostConfiguration<T: Config>(sp_std::marker::PhantomData<T>);
+
+impl<T: Config> OnRuntimeUpgrade for ClearHostConfiguration<T> {
+	fn on_runtime_upgrade() -> Weight {
+		let hash_prefix = from_hex("0x45323df7cc47150b3930e2666b0aa313c522231880238a0c56021b8744a00743").unwrap();
+		let keys_removed = match clear_prefix(hash_prefix.as_slice(), None) {
+			KillStorageResult::AllRemoved(value) => value,
+			KillStorageResult::SomeRemaining(value) => {
+				log::error!(
+				"`clear_prefix` failed to remove `ParachainSystem.HostConfiguration`. THIS SHOULD NOT HAPPEN! 🚨",
+				);
+				value
+			},
+		} as u64;
+
+		log::info!(
+			"🧹 Removed {} keys while clearing `ParachainSystem.HostConfiguration`",
+			keys_removed
+		);
+
+		T::DbWeight::get().reads_writes(keys_removed + 1, keys_removed)
+	}
+}
+
 /// All migrations of the runtime, aside from the ones declared in the pallets.
 ///
 /// This can be a tuple of types, each implementing `OnRuntimeUpgrade`.
 #[allow(unused_parens)]
 type Migrations = (
+	ClearHostConfiguration<Runtime>,
 	cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
 );
 
@@ -343,7 +373,6 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type FreezeIdentifier = [u8; 8];
-	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
 }
 
@@ -590,6 +619,7 @@ impl pallet_vesting::Config for Runtime {
 	type MinVestedTransfer = MinVestedTransfer;
 	type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
 	type UnvestedFundsAllowedWithdrawReasons = UnvestedFundsAllowedWithdrawReasons;
+	type BlockNumberProvider = System;
 	const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
