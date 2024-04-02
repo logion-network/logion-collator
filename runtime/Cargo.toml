@@ -15,10 +15,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.8.0", optional = true }
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = ["derive"] }
 hex-literal = { version = "0.4.1", optional = true }
 log = { version = "0.4.20", default-features = false }
-scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive", "serde"] }
 smallvec = "1.11.0"
 
 # Substrate
@@ -35,6 +35,8 @@ pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", default-feat
 pallet-authorship = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 pallet-message-queue = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
+pallet-multisig = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
+pallet-recovery = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 pallet-session = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
@@ -51,6 +53,7 @@ sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", defaul
 sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk.git",  default-features = false, tag = "polkadot-v1.8.0" }
 sp-offchain = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
 sp-session = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, tag = "polkadot-v1.8.0" }
@@ -80,6 +83,15 @@ pallet-collator-selection = { git = "https://github.com/paritytech/polkadot-sdk"
 parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.8.0", default-features = false }
 parachain-info = { package = "staging-parachain-info", git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-v1.8.0", default-features = false }
 
+# Logion
+logion-shared = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+pallet-block-reward = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+pallet-lo-authority-list = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+pallet-logion-loc = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+pallet-logion-vault = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+pallet-logion-vote = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+pallet-verified-recovery = { git = "https://github.com/logion-network/logion-pallets", default-features = false,  tag = "v0.2.1" }
+
 [features]
 default = ["std"]
 std = [
@@ -100,16 +112,27 @@ std = [
 	"frame-system/std",
 	"frame-try-runtime?/std",
 	"log/std",
+	"logion-shared/std",
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
+	"pallet-block-reward/std",
 	"pallet-collator-selection/std",
+	"pallet-lo-authority-list/std",
+	"pallet-logion-loc/std",
+	"pallet-logion-vault/std",
+	"pallet-logion-vote/std",
 	"pallet-message-queue/std",
+	"pallet-multisig/std",
+	"pallet-recovery/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
 	"pallet-timestamp/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-transaction-payment/std",
+	"pallet-verified-recovery/std",
+	"pallet-treasury/std",
+	"pallet-utility/std",
 	"pallet-xcm/std",
 	"parachain-info/std",
 	"parachains-common/std",
@@ -148,9 +171,17 @@ runtime-benchmarks = [
 	"hex-literal",
 	"pallet-balances/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
+	"pallet-lo-authority-list/runtime-benchmarks",
+	"pallet-logion-loc/runtime-benchmarks",
+	"pallet-logion-vault/runtime-benchmarks",
+	"pallet-logion-vote/runtime-benchmarks",
 	"pallet-message-queue/runtime-benchmarks",
+	"pallet-multisig/runtime-benchmarks",
+	"pallet-recovery/runtime-benchmarks",
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
+	"pallet-utility/runtime-benchmarks",
+	"pallet-verified-recovery/runtime-benchmarks",
 	"pallet-xcm/runtime-benchmarks",
 	"parachains-common/runtime-benchmarks",
 	"polkadot-parachain-primitives/runtime-benchmarks",
@@ -172,14 +203,22 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
+	"pallet-block-reward/try-runtime",
 	"pallet-collator-selection/try-runtime",
+	"pallet-lo-authority-list/try-runtime",
+	"pallet-logion-loc/try-runtime",
+	"pallet-logion-vault/try-runtime",
+	"pallet-logion-vote/try-runtime",
 	"pallet-message-queue/try-runtime",
+	"pallet-multisig/try-runtime",
+	"pallet-recovery/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-timestamp/try-runtime",
 	"pallet-transaction-payment/try-runtime",
 	"pallet-treasury/try-runtime",
 	"pallet-utility/try-runtime",
+	"pallet-verified-recovery/try-runtime",
 	"pallet-vesting/try-runtime",
 	"pallet-xcm/try-runtime",
 	"parachain-info/try-runtime",
