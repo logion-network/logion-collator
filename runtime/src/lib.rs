@@ -708,7 +708,7 @@ impl pallet_logion_loc::Config for Runtime {
 
 parameter_types! {
 	pub const RecoveryConfigDepositBase: u64 = 10;
-	pub const RecoveryFrieldDepositFactor: u64 = 1;
+	pub const RecoveryFriendDepositFactor: u64 = 1;
 	pub const MaxFriends: u16 = 3;
 	pub const RecoveryDeposit: u64 = 10;
 }
@@ -718,7 +718,7 @@ impl pallet_recovery::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ConfigDepositBase = RecoveryConfigDepositBase;
-	type FriendDepositFactor = RecoveryFrieldDepositFactor;
+	type FriendDepositFactor = RecoveryFriendDepositFactor;
 	type MaxFriends = MaxFriends;
 	type RecoveryDeposit = RecoveryDeposit;
 	type WeightInfo = weights::pallet_recovery::WeightInfo<Runtime>;
