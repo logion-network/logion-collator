@@ -137,36 +137,11 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
-pub struct ClearHostConfiguration<T: Config>(sp_std::marker::PhantomData<T>);
-
-impl<T: Config> OnRuntimeUpgrade for ClearHostConfiguration<T> {
-	fn on_runtime_upgrade() -> Weight {
-		let hash_prefix = from_hex("0x45323df7cc47150b3930e2666b0aa313c522231880238a0c56021b8744a00743").unwrap();
-		let keys_removed = match clear_prefix(hash_prefix.as_slice(), None) {
-			KillStorageResult::AllRemoved(value) => value,
-			KillStorageResult::SomeRemaining(value) => {
-				log::error!(
-				"`clear_prefix` failed to remove `ParachainSystem.HostConfiguration`. THIS SHOULD NOT HAPPEN! 🚨",
-				);
-				value
-			},
-		} as u64;
-
-		log::info!(
-			"🧹 Removed {} keys while clearing `ParachainSystem.HostConfiguration`",
-			keys_removed
-		);
-
-		T::DbWeight::get().reads_writes(keys_removed + 1, keys_removed)
-	}
-}
-
 /// All migrations of the runtime, aside from the ones declared in the pallets.
 ///
 /// This can be a tuple of types, each implementing `OnRuntimeUpgrade`.
 #[allow(unused_parens)]
 type Migrations = (
-	ClearHostConfiguration<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
