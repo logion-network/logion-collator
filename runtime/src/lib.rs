@@ -41,7 +41,7 @@ use frame_support::{
 	},
 	PalletId,
 };
-use frame_support::traits::{ConstU128, Contains, Imbalance};
+use frame_support::traits::{Contains, Imbalance};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -354,7 +354,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
 	type FreezeIdentifier = [u8; 8];
