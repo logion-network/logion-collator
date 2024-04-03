@@ -1240,6 +1240,16 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_logion_loc::runtime_api::FeesApi<Block, Balance, TokenIssuance> for Runtime {
+		fn query_file_storage_fee(num_of_entries: u32, tot_size: u32) -> Balance {
+			LogionLoc::calculate_fee(num_of_entries, tot_size)
+		}
+
+		fn query_certificate_fee(token_issuance: TokenIssuance) -> Balance {
+			LogionLoc::calculate_certificate_fee(token_issuance)
+		}
+	}
+
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
 		fn on_runtime_upgrade(checks: frame_try_runtime::UpgradeCheckSelect) -> (Weight, Weight) {
