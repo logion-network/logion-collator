@@ -167,7 +167,6 @@ impl<T: Config> OnRuntimeUpgrade for ClearHostConfiguration<T> {
 #[allow(unused_parens)]
 type Migrations = (
 	ClearHostConfiguration<Runtime>,
-	cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
