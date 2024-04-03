@@ -373,10 +373,10 @@ parameter_types! {
 
 	// Inflation: I=0,05 (5%)
 	// Total supply: N=10^9
-	// Block rate: B=6 (Number of seconds between 2 blocks)
+	// Block rate: B=12 (Number of seconds between 2 blocks)
 	// The reward can be calculated as follows: N * (I / (3600 * 24 * 365 / B))
-	// We thus mint 10 LGNT every block
-    pub const InflationAmount: Balance = 10 * LGNT;
+	// We thus mint 19 LGNT every block
+    pub const InflationAmount: Balance = 19 * LGNT;
     pub const InflationDistributionKey: DistributionKey = DistributionKey {
         legal_officers_percent: Percent::from_percent(35),
         community_treasury_percent: Percent::from_percent(30),
