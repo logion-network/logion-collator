@@ -1,9 +1,10 @@
 use cumulus_primitives_core::ParaId;
 use logion_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, LGNT, SS58Prefix};
+use pallet_lo_authority_list::GenesisHostData;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public, OpaquePeerId};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use std::str::FromStr;
 
@@ -61,102 +62,6 @@ pub fn template_session_keys(keys: AuraId) -> logion_runtime::SessionKeys {
 	logion_runtime::SessionKeys { aura: keys }
 }
 
-pub fn logion_config() -> ChainSpec {
-	const ROOT_PUBLIC_SR25519: &str = "5GzrECvUzFng58zzFvqVJvpE2MRnjU9vgh4iJMhqrLBSRRAv";
-
-	const NODE01_PUBLIC_SR25519: &str = "5DjzFDhFidvGCuuy6i8Lsi4XyruYjxTTkJKb1o7XzVdMNPVb";
-	const NODE02_PUBLIC_SR25519: &str = "5DoD9n61SssFiWQDTD7bz1eX3KCxZJ6trVj2GsDwMi2PqP85";
-	const NODE03_PUBLIC_SR25519: &str = "5CJTSSJ4v1RAauZpeqTeddyui4wESZZqPor33wum9aKuQXZC";
-	const NODE04_PUBLIC_SR25519: &str = "5EF6NVgMfRRFMRnNEByNJsQJfD1fokamB9kq2J7SLRVraJrg";
-	const NODE05_PUBLIC_SR25519: &str = "5G7Gtz7iLn3z5PkqfweQJp5jJdV3u8ix7qWcGS4bs38EH1W3";
-	const NODE06_PUBLIC_SR25519: &str = "5EZRCd7FybQKthaD2XuV21RAdU5LqPoveiSdrz9Z6JCstoSH";
-	const NODE07_PUBLIC_SR25519: &str = "5DqwojnfMTfZvERe9SJr3e1ApfaAY8Lye8Tch6WfnmxkfJfw";
-	const NODE08_PUBLIC_SR25519: &str = "5GRie9PZxqzAmPoJAgiLjzgxzFi7LW2ez1TNzzWdUN6yh8Jd";
-	const NODE09_PUBLIC_SR25519: &str = "5CSsbWDRbV5eYuWZsSrFcfkrEnGAjhbmyGJjjpRkjQ7s5dCd";
-	const NODE10_PUBLIC_SR25519: &str = "5FYe8QZfCUZVh6BeuAziATXNcowbZuSngqrguGahscdbhhnz";
-	const NODE11_PUBLIC_SR25519: &str = "5DRbgvZC3LEeJmRe893Q3UEwP2H1DPv5x8ofFgcxihCLu3oL";
-	const NODE12_PUBLIC_SR25519: &str = "5F6h3kuXnhpwkVzDKRd65jrSu53UecKNRdHcgCGFiAbAPWMt";
-
-	ChainSpec::builder(
-		logion_runtime::WASM_BINARY
-			.expect("WASM binary was not built, please build it!"),
-		Extensions {
-			relay_chain: "polkadot".into(),
-			para_id: main_para_id(),
-		},
-	)
-	.with_name("logion network")
-	.with_id("logion")
-	.with_protocol_id("logion")
-	.with_chain_type(ChainType::Live)
-	.with_genesis_config_patch(build_genesis_config(
-		vec![
-			(
-				AccountId::from_str(NODE01_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE01_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE02_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE02_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE03_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE03_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE04_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE04_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE05_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE05_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE06_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE06_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE07_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE07_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE08_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE08_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE09_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE09_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE10_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE10_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE11_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE11_PUBLIC_SR25519).unwrap()),
-			),
-			(
-				AccountId::from_str(NODE12_PUBLIC_SR25519).unwrap(),
-				AuraId::from(sr25519::Public::from_str(NODE12_PUBLIC_SR25519).unwrap()),
-			),
-		],
-		vec![
-			(
-				AccountId::from_str(ROOT_PUBLIC_SR25519).unwrap(),
-				1_000_000_000 * LGNT,
-			),
-		],
-		main_para_id().into(),
-		AccountId::from_str(ROOT_PUBLIC_SR25519).unwrap(),
-	))
-	.with_properties(default_properties("LGNT"))
-	.build()
-}
-
-fn main_para_id() -> u32 {
-	3341
-}
-
 const DEFAULT_TEST_BALANCE: Balance = 1 << 60;
 
 pub fn development_config() -> ChainSpec {
@@ -172,7 +77,7 @@ pub fn development_config() -> ChainSpec {
     .with_id("local_logion")
     .with_protocol_id("logion")
     .with_chain_type(ChainType::Development)
-    .with_genesis_config_patch(build_genesis_config(
+    .with_genesis_config_patch(logion_genesis(
         // initial collators.
         vec![
             (
@@ -232,6 +137,32 @@ pub fn development_config() -> ChainSpec {
         ],
         test_parachain_id(),
         get_account_id_from_seed::<sr25519::Public>("Alice"),
+		vec![ // Initial set of Logion Legal Officers
+			  (
+				  get_account_id_from_seed::<sr25519::Public>("Alice"),
+				  GenesisHostData {
+					  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap())),
+					  base_url: None,
+					  region: "Europe".into(),
+				  }
+			  ),
+			  (
+				  get_account_id_from_seed::<sr25519::Public>("Bob"),
+				  GenesisHostData {
+					  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap())),
+					  base_url: None,
+					  region: "Europe".into(),
+				  }
+			  ),
+			  (
+				  get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				  GenesisHostData {
+					  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWJvyP3VJYymTqG7eH4PM5rN4T2agk5cdNCfNymAqwqcvZ").into_vec().unwrap())),
+					  base_url: None,
+					  region: "Europe".into(),
+				  }
+			  ),
+		],
     ))
     .with_properties(default_properties("LGNT"))
     .build()
@@ -259,7 +190,7 @@ fn testnet_config(name: &str, id: &str, symbol: &str, root_ref: &str) -> ChainSp
         .with_name(name)
         .with_id(id)
         .with_chain_type(ChainType::Live)
-        .with_genesis_config_patch(build_genesis_config(
+        .with_genesis_config_patch(logion_genesis(
             // initial collators.
             vec![
                 (
@@ -331,6 +262,32 @@ fn testnet_config(name: &str, id: &str, symbol: &str, root_ref: &str) -> ChainSp
             ],
             test_parachain_id(),
             AccountId::from_str(&root).unwrap(),
+			vec![ // Initial set of Logion Legal Officers
+				  (
+					  get_account_id_from_seed::<sr25519::Public>("Alice"),
+					  GenesisHostData {
+						  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap())),
+						  base_url: None,
+						  region: "Europe".into(),
+					  }
+				  ),
+				  (
+					  get_account_id_from_seed::<sr25519::Public>("Bob"),
+					  GenesisHostData {
+						  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap())),
+						  base_url: None,
+						  region: "Europe".into(),
+					  }
+				  ),
+				  (
+					  get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					  GenesisHostData {
+						  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWJvyP3VJYymTqG7eH4PM5rN4T2agk5cdNCfNymAqwqcvZ").into_vec().unwrap())),
+						  base_url: None,
+						  region: "Europe".into(),
+					  }
+				  ),
+			],
         ))
         .with_protocol_id(id)
         .with_properties(default_properties(symbol))
@@ -359,7 +316,7 @@ pub fn local_config() -> ChainSpec {
 	.with_id("local_logion")
 	.with_protocol_id("logion")
 	.with_chain_type(ChainType::Local)
-	.with_genesis_config_patch(build_genesis_config(
+	.with_genesis_config_patch(logion_genesis(
 		// initial collators.
 		vec![
 			(
@@ -419,16 +376,43 @@ pub fn local_config() -> ChainSpec {
 		],
 		test_parachain_id(),
 		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		vec![ // Initial set of Logion Legal Officers
+			  (
+				  get_account_id_from_seed::<sr25519::Public>("Alice"),
+				  GenesisHostData {
+					  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWBmAwcd4PJNJvfV89HwE48nwkRmAgo8Vy3uQEyNNHBox2").into_vec().unwrap())),
+					  base_url: None,
+					  region: "Europe".into(),
+				  }
+			  ),
+			  (
+				  get_account_id_from_seed::<sr25519::Public>("Bob"),
+				  GenesisHostData {
+					  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWQYV9dGMFoRzNStwpXztXaBUjtPqi6aU76ZgUriHhKust").into_vec().unwrap())),
+					  base_url: None,
+					  region: "Europe".into(),
+				  }
+			  ),
+			  (
+				  get_account_id_from_seed::<sr25519::Public>("Charlie"),
+				  GenesisHostData {
+					  node_id: Some(OpaquePeerId(bs58::decode("12D3KooWJvyP3VJYymTqG7eH4PM5rN4T2agk5cdNCfNymAqwqcvZ").into_vec().unwrap())),
+					  base_url: None,
+					  region: "Europe".into(),
+				  }
+			  ),
+		],
 	))
 	.with_properties(default_properties("LGNT"))
 	.build()
 }
 
-fn build_genesis_config(
+fn logion_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	id: ParaId,
 	root_key: AccountId,
+	legal_officers: Vec<(AccountId, GenesisHostData)>,
 ) -> serde_json::Value {
 	serde_json::json!({
 		"balances": {
@@ -458,6 +442,9 @@ fn build_genesis_config(
 		},
 		"sudo": {
 			"key": Some(root_key),
+		},
+		"loAuthorityList": {
+			"legalOfficers": legal_officers,
 		},
 	})
 }
