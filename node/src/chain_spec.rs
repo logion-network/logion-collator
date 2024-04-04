@@ -62,7 +62,7 @@ pub fn template_session_keys(keys: AuraId) -> logion_runtime::SessionKeys {
 	logion_runtime::SessionKeys { aura: keys }
 }
 
-const DEFAULT_TEST_BALANCE: Balance = 1 << 60;
+const DEFAULT_TEST_BALANCE: Balance = 100_000_000_000_000_000_000_000;
 
 pub fn development_config() -> ChainSpec {
     ChainSpec::builder(
