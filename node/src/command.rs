@@ -22,7 +22,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"dev" => Box::new(chain_spec::development_config()),
 		"logion-dev" => Box::new(chain_spec::logion_dev_config()),
 		"logion-test" => Box::new(chain_spec::logion_test_config()),
-		"logion" => Box::new(chain_spec::logion_config()),
 		"" | "local" => Box::new(chain_spec::local_config()),
 		path => Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 	})

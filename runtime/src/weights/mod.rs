@@ -19,6 +19,17 @@
 
 pub mod block_weights;
 pub mod extrinsic_weights;
+pub mod frame_system;
+pub mod pallet_balances;
+pub mod pallet_lo_authority_list;
+pub mod pallet_logion_loc;
+pub mod pallet_logion_vote;
+pub mod pallet_multisig;
+pub mod pallet_recovery;
+pub mod pallet_sudo;
+pub mod pallet_timestamp;
+pub mod pallet_utility;
+pub mod pallet_verified_recovery;
 pub mod rocksdb_weights;
 
 pub use block_weights::constants::BlockExecutionWeight;

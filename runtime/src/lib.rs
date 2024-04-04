@@ -9,20 +9,15 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 mod weights;
 pub mod xcm_config;
 
+use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
-use cumulus_pallet_xcmp_queue::Config;
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, Get, H160, OpaqueMetadata};
-use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
-	traits::{
-		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount,
-		IdentityLookup, One, Verify
-	},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult, MultiSignature,
-};
+use sp_core::{crypto::KeyTypeId, H160, H256, OpaqueMetadata};
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{
+	AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount,
+	IdentityLookup, One, Verify
+}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -46,31 +41,33 @@ use frame_support::{
 	},
 	PalletId,
 };
-use frame_support::__private::sp_io;
-use frame_support::traits::OnRuntimeUpgrade;
+use frame_support::traits::{Contains, Imbalance};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_transaction_payment::{CurrencyAdapter, Multiplier};
+use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier};
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_io::{storage::clear_prefix, KillStorageResult};
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::{MultiAddress, Perbill, Permill, Percent};
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
+use scale_info::TypeInfo;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 // Polkadot imports
-use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
-use sp_core::bytes::from_hex;
+use polkadot_runtime_common::{BlockHashCount};
 
 use weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight};
 
 // XCM Imports
 use xcm::latest::prelude::BodyId;
+
+// Logion imports
+use logion_shared::{CreateRecoveryCallFactory, MultisigApproveAsMultiCallFactory, MultisigAsMultiCallFactory, DistributionKey, RewardDistributor as RewardDistributorTrait};
+
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = MultiSignature;
@@ -137,37 +134,11 @@ pub type UncheckedExtrinsic =
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
-pub struct ClearHostConfiguration<T: Config>(sp_std::marker::PhantomData<T>);
-
-impl<T: Config> OnRuntimeUpgrade for ClearHostConfiguration<T> {
-	fn on_runtime_upgrade() -> Weight {
-		let hash_prefix = from_hex("0x45323df7cc47150b3930e2666b0aa313c522231880238a0c56021b8744a00743").unwrap();
-		let keys_removed = match clear_prefix(hash_prefix.as_slice(), None) {
-			KillStorageResult::AllRemoved(value) => value,
-			KillStorageResult::SomeRemaining(value) => {
-				log::error!(
-				"`clear_prefix` failed to remove `ParachainSystem.HostConfiguration`. THIS SHOULD NOT HAPPEN! 🚨",
-				);
-				value
-			},
-		} as u64;
-
-		log::info!(
-			"🧹 Removed {} keys while clearing `ParachainSystem.HostConfiguration`",
-			keys_removed
-		);
-
-		T::DbWeight::get().reads_writes(keys_removed + 1, keys_removed)
-	}
-}
-
 /// All migrations of the runtime, aside from the ones declared in the pallets.
 ///
 /// This can be a tuple of types, each implementing `OnRuntimeUpgrade`.
 #[allow(unused_parens)]
 type Migrations = (
-	ClearHostConfiguration<Runtime>,
-	cumulus_pallet_xcmp_queue::migration::v4::MigrationToV4<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
@@ -212,7 +183,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("logion"),
 	impl_name: create_runtime_str!("logion"),
 	authoring_version: 1,
-	spec_version: 3,
+	spec_version: 000_003_000,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -308,11 +279,25 @@ parameter_types! {
 	pub const SS58Prefix: u16 = 2021;
 }
 
+pub struct BaseCallFilter;
+impl Contains<RuntimeCall> for BaseCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::Recovery(pallet_recovery::Call::create_recovery{ .. }) => false,
+			RuntimeCall::Multisig(pallet_multisig::Call::approve_as_multi{ .. }) => false,
+			RuntimeCall::Multisig(pallet_multisig::Call::as_multi{ .. }) => false,
+			_ => true
+		}
+	}
+}
+
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
 /// [`ParaChainDefaultConfig`](`struct@frame_system::config_preludes::ParaChainDefaultConfig`),
 /// but overridden as needed.
 #[derive_impl(frame_system::config_preludes::ParaChainDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Runtime {
+	/// The basic call filter to use in dispatchable.
+	type BaseCallFilter = BaseCallFilter;
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The index type for storing how many extrinsics an account has signed.
@@ -333,6 +318,8 @@ impl frame_system::Config for Runtime {
 	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
 	type BlockLength = RuntimeBlockLength;
+	/// Weight information for the extrinsics of this pallet.
+	type SystemWeightInfo = weights::frame_system::WeightInfo<Runtime>;
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = SS58Prefix;
 	/// The action to take on a Runtime Upgrade
@@ -346,7 +333,7 @@ impl pallet_timestamp::Config for Runtime {
 	type Moment = u64;
 	type OnTimestampSet = Aura;
 	type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_timestamp::WeightInfo<Runtime>;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -360,6 +347,8 @@ parameter_types! {
 
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
@@ -367,13 +356,78 @@ impl pallet_balances::Config for Runtime {
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
-	type MaxReserves = ConstU32<50>;
-	type ReserveIdentifier = [u8; 8];
+	type WeightInfo = weights::pallet_balances::WeightInfo<Runtime>;
+	type FreezeIdentifier = [u8; 8];
+	type MaxFreezes = ();
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type FreezeIdentifier = [u8; 8];
-	type MaxFreezes = ConstU32<0>;
+}
+
+parameter_types! {
+    pub const InclusionFeesDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(35),
+        community_treasury_percent: Percent::from_percent(30),
+        logion_treasury_percent: Percent::from_percent(35),
+        loc_owner_percent: Percent::from_percent(0),
+    };
+
+	// Inflation: I=0,05 (5%)
+	// Total supply: N=10^9
+	// Block rate: B=12 (Number of seconds between 2 blocks)
+	// The reward can be calculated as follows: N * (I / (3600 * 24 * 365 / B))
+	// We thus mint 19 LGNT every block
+    pub const InflationAmount: Balance = 19 * LGNT;
+    pub const InflationDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(35),
+        community_treasury_percent: Percent::from_percent(30),
+        logion_treasury_percent: Percent::from_percent(35),
+        loc_owner_percent: Percent::from_percent(0),
+    };
+
+	pub const FileStorageByteFee: Balance = 2000 * NANO_LGNT; // 2.0 LGNT per MB -> 0.000002 LGNT per B
+	pub const FileStorageEntryFee: Balance = 0;
+	pub const FileStorageFeeDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(80),
+        community_treasury_percent: Percent::from_percent(20),
+        logion_treasury_percent: Percent::from_percent(0),
+        loc_owner_percent: Percent::from_percent(0),
+    };
+
+	pub const CertificateFee: Balance = 40 * MILLI_LGNT; // 0.04 LGNT per token
+    pub const CertificateFeeDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(20),
+        community_treasury_percent: Percent::from_percent(80),
+        logion_treasury_percent: Percent::from_percent(0),
+        loc_owner_percent: Percent::from_percent(0),
+    };
+
+	pub const ValueFeeDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(0),
+        community_treasury_percent: Percent::from_percent(0),
+        logion_treasury_percent: Percent::from_percent(100),
+        loc_owner_percent: Percent::from_percent(0),
+    };
+
+    pub const RecurentFeeDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(0),
+        community_treasury_percent: Percent::from_percent(0),
+        logion_treasury_percent: Percent::from_percent(95),
+        loc_owner_percent: Percent::from_percent(5),
+    };
+
+    pub const IdentityLocLegalFeeDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(0),
+        community_treasury_percent: Percent::from_percent(0),
+        logion_treasury_percent: Percent::from_percent(100),
+        loc_owner_percent: Percent::from_percent(0),
+    };
+
+    pub const OtherLocLegalFeeDistributionKey: DistributionKey = DistributionKey {
+        legal_officers_percent: Percent::from_percent(0),
+        community_treasury_percent: Percent::from_percent(0),
+        logion_treasury_percent: Percent::from_percent(0),
+        loc_owner_percent: Percent::from_percent(100),
+    };
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -382,7 +436,8 @@ pub struct DealWithInclusionFees;
 impl OnUnbalanced<NegativeImbalance> for DealWithInclusionFees {
 
 	fn on_nonzero_unbalanced(fees: NegativeImbalance) {
-		drop(fees); // Disable fees distribution for the moment
+
+		RewardDistributor::distribute(fees, InclusionFeesDistributionKey::get());
 	}
 }
 
@@ -390,16 +445,23 @@ pub type WeightToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
 
 parameter_types! {
 	pub FeeMultiplier: Multiplier = Multiplier::one();
-	pub const WeightToFeeMultiplier: Balance = 10_000_000;
+
+	// The multiplier is set such as inclusion fees are ~2 LGNT on average.
+	// Spreadsheet in /docs/inclusion_fees.ods contains the model that lead
+	// to this result.
+	//
+	// This value will probably have to be adjusted once we have more
+	// usage statistics available.
+	pub const WeightToFeeMultiplier: Balance = 5_089_484_898;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithInclusionFees>;
-	type WeightToFee = WeightToFee;
-	type LengthToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
-	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = ConstU8<5>;
+	type WeightToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
+	type LengthToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
+	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
 }
 
 parameter_types! {
@@ -486,7 +548,7 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but let's be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
-	type WeightInfo = ();
+	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>; // No benchmark available
 }
 
 impl pallet_aura::Config for Runtime {
@@ -532,7 +594,314 @@ impl pallet_collator_selection::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
-	type WeightInfo = ();
+	type WeightInfo = weights::pallet_sudo::WeightInfo<Runtime>;
+}
+
+parameter_types! {
+	#[derive(Debug, Eq, Clone, PartialEq, TypeInfo)]
+	pub const MaxBaseUrlLen: u32 = 2000;
+	pub const MaxWellKnownNodes: u32 = 100;
+	#[derive(Debug, Eq, Clone, PartialEq, TypeInfo, PartialOrd, Ord)]
+	pub const MaxPeerIdLength: u32 = 128;
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, Copy, MaxEncodedLen)]
+pub enum Region {
+	Europe,
+}
+
+impl sp_std::str::FromStr for Region {
+	type Err = ();
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s {
+			"Europe" => Ok(Region::Europe),
+			_ => Err(()),
+		}
+	}
+}
+
+impl Default for Region {
+
+	fn default() -> Self {
+		Self::Europe
+	}
+}
+
+impl pallet_lo_authority_list::Config for Runtime {
+	type AddOrigin = EnsureRoot<AccountId>;
+	type RemoveOrigin = EnsureRoot<AccountId>;
+	type UpdateOrigin = EnsureRoot<AccountId>;
+	type Region = Region;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_lo_authority_list::WeightInfo<Runtime>;
+	type MaxBaseUrlLen = MaxBaseUrlLen;
+	type MaxNodes = MaxWellKnownNodes;
+	type MaxPeerIdLength = MaxPeerIdLength;
+}
+
+parameter_types! {
+	pub const MaxAccountLocs: u32 = 200;
+	#[derive(TypeInfo)]
+	pub const MaxLocMetadata: u32 = 50;
+	#[derive(TypeInfo)]
+	pub const MaxLocFiles: u32 = 50;
+	#[derive(TypeInfo)]
+	pub const MaxLocLinks: u32 = 50;
+	pub const MaxCollectionItemFiles: u32 = 10;
+	pub const MaxCollectionItemTCs: u32 = 10;
+	pub const MaxTokensRecordFiles: u32 = 10;
+}
+
+pub struct SHA256;
+impl Hasher<H256> for SHA256 {
+
+	fn hash(data: &Vec<u8>) -> H256 {
+		let bytes = sha2_256(data);
+		H256(bytes)
+	}
+}
+
+impl pallet_logion_loc::Config for Runtime {
+	type LocId = LocId;
+	type RuntimeEvent = RuntimeEvent;
+	type Hash = Hash;
+	type Hasher = SHA256;
+	type IsLegalOfficer = LoAuthorityList;
+	type CollectionItemId = Hash;
+	type TokensRecordId = Hash;
+	type MaxAccountLocs = MaxAccountLocs;
+	type MaxLocMetadata = MaxLocMetadata;
+	type MaxLocFiles = MaxLocFiles;
+	type MaxLocLinks = MaxLocLinks;
+	type MaxCollectionItemFiles = MaxCollectionItemFiles;
+	type MaxCollectionItemTCs = MaxCollectionItemTCs;
+	type MaxTokensRecordFiles = MaxTokensRecordFiles;
+	type WeightInfo = weights::pallet_logion_loc::WeightInfo<Runtime>;
+	type Currency = Balances;
+	type FileStorageByteFee = FileStorageByteFee;
+	type FileStorageEntryFee = FileStorageEntryFee;
+	type RewardDistributor = RewardDistributor;
+	type FileStorageFeeDistributionKey = FileStorageFeeDistributionKey;
+	type EthereumAddress = EthereumAddress;
+	type SponsorshipId = SponsorshipId;
+	type CertificateFee = CertificateFee;
+	type CertificateFeeDistributionKey = CertificateFeeDistributionKey;
+	type TokenIssuance = TokenIssuance;
+	type ValueFeeDistributionKey = ValueFeeDistributionKey;
+	type CollectionItemFeeDistributionKey = RecurentFeeDistributionKey;
+	type TokensRecordFeeDistributionKey = RecurentFeeDistributionKey;
+	type IdentityLocLegalFeeDistributionKey = IdentityLocLegalFeeDistributionKey;
+	type TransactionLocLegalFeeDistributionKey = OtherLocLegalFeeDistributionKey;
+	type CollectionLocLegalFeeDistributionKey = OtherLocLegalFeeDistributionKey;
+	#[cfg(feature = "runtime-benchmarks")]
+	type LocIdFactory = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type CollectionItemIdFactory = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type TokensRecordIdFactory = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type EthereumAddressFactory = ();
+	#[cfg(feature = "runtime-benchmarks")]
+	type SponsorshipIdFactory = ();
+}
+
+parameter_types! {
+	pub const RecoveryConfigDepositBase: u64 = 10;
+	pub const RecoveryFriendDepositFactor: u64 = 1;
+	pub const MaxFriends: u16 = 3;
+	pub const RecoveryDeposit: u64 = 10;
+}
+
+impl pallet_recovery::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type ConfigDepositBase = RecoveryConfigDepositBase;
+	type FriendDepositFactor = RecoveryFriendDepositFactor;
+	type MaxFriends = MaxFriends;
+	type RecoveryDeposit = RecoveryDeposit;
+	type WeightInfo = weights::pallet_recovery::WeightInfo<Runtime>;
+}
+
+pub struct PalletRecoveryCreateRecoveryCallFactory;
+impl CreateRecoveryCallFactory<RuntimeOrigin, AccountId, BlockNumber> for PalletRecoveryCreateRecoveryCallFactory {
+	type Call = RuntimeCall;
+
+	fn build_create_recovery_call(legal_officers: Vec<AccountId>, threshold: u16, delay_period: BlockNumber) -> RuntimeCall {
+		RuntimeCall::Recovery(pallet_recovery::Call::create_recovery{ friends: legal_officers, threshold, delay_period })
+	}
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_verified_recovery::benchmarking::{
+	SetupBenchmark,
+};
+#[cfg(feature = "runtime-benchmarks")]
+pub struct VerifiedRecoverySetupBenchmark;
+#[cfg(feature = "runtime-benchmarks")]
+impl SetupBenchmark<AccountId> for VerifiedRecoverySetupBenchmark {
+
+	fn setup() -> (AccountId, Vec<AccountId>) {
+		let requester: AccountId = [0u8;32].into();
+		Balances::make_free_balance_be(&requester, Balance::max_value());
+
+		let loc_id1: LocId = 0;
+		let legal_officer_id1 = LoAuthorityList::legal_officers()[0].clone();
+		Self::setup_loc(loc_id1, &requester, &legal_officer_id1);
+
+		let loc_id2: LocId = 1;
+		let legal_officer_id2 = LoAuthorityList::legal_officers()[1].clone();
+		Self::setup_loc(loc_id2, &requester, &legal_officer_id2);
+		(
+			requester,
+			Vec::from([
+				legal_officer_id1,
+				legal_officer_id2,
+			])
+		)
+	}
+}
+#[cfg(feature = "runtime-benchmarks")]
+impl VerifiedRecoverySetupBenchmark {
+	fn setup_loc(loc_id: LocId, requester: &AccountId, legal_officer_id: &AccountId) {
+		let _ = LogionLoc::create_polkadot_identity_loc(
+			RuntimeOrigin::signed(requester.clone()),
+			loc_id,
+			legal_officer_id.clone(),
+			0u32.into(),
+			ItemsParams::empty(),
+		);
+		let _ = LogionLoc::close(
+			RuntimeOrigin::signed(legal_officer_id.clone()),
+			loc_id,
+			None,
+			false,
+		);
+	}
+}
+
+impl pallet_verified_recovery::Config for Runtime {
+	type LocId = LocId;
+	type CreateRecoveryCallFactory = PalletRecoveryCreateRecoveryCallFactory;
+	type LocQuery = LogionLoc;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_verified_recovery::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SetupBenchmark = VerifiedRecoverySetupBenchmark;
+}
+
+parameter_types! {
+	pub const MultiSigDepositBase: Balance = 500;
+	pub const MultiSigDepositFactor: Balance = 100;
+	pub const MaxSignatories: u16 = 20;
+}
+
+impl pallet_multisig::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = MultiSigDepositBase;
+	type DepositFactor = MultiSigDepositFactor;
+	type MaxSignatories = MaxSignatories;
+	type WeightInfo = weights::pallet_multisig::WeightInfo<Runtime>;
+}
+
+pub struct PalletMultisigApproveAsMultiCallFactory;
+impl MultisigApproveAsMultiCallFactory<RuntimeOrigin, AccountId, Timepoint<BlockNumber>> for PalletMultisigApproveAsMultiCallFactory {
+	type Call = RuntimeCall;
+
+	fn build_approve_as_multi_call(
+		threshold: u16,
+		other_signatories: Vec<AccountId>,
+		maybe_timepoint: Option<Timepoint<BlockNumber>>,
+		call_hash: [u8; 32],
+		max_weight: Weight
+	) -> RuntimeCall {
+		RuntimeCall::Multisig(pallet_multisig::Call::approve_as_multi{ threshold, other_signatories, maybe_timepoint, call_hash, max_weight })
+	}
+}
+
+pub struct PalletMultisigAsMultiCallFactory;
+impl MultisigAsMultiCallFactory<RuntimeOrigin, AccountId, Timepoint<BlockNumber>> for PalletMultisigAsMultiCallFactory {
+	type Call = RuntimeCall;
+
+	fn build_as_multi_call(
+		threshold: u16,
+		other_signatories: Vec<AccountId>,
+		maybe_timepoint: Option<Timepoint<BlockNumber>>,
+		call: Box<Self::Call>,
+		max_weight: Weight,
+	) -> RuntimeCall {
+		RuntimeCall::Multisig(pallet_multisig::Call::as_multi{ threshold, other_signatories, maybe_timepoint, call, max_weight })
+	}
+}
+
+impl pallet_logion_vault::Config for Runtime {
+	type RuntimeCall = RuntimeCall;
+	type MultisigApproveAsMultiCallFactory = PalletMultisigApproveAsMultiCallFactory;
+	type MultisigAsMultiCallFactory = PalletMultisigAsMultiCallFactory;
+	type IsLegalOfficer = LoAuthorityList;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = weights::pallet_multisig::WeightInfo<Runtime>;
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_logion_vote::benchmarking::{
+	LocSetup,
+};
+#[cfg(feature = "runtime-benchmarks")]
+use logion_shared::IsLegalOfficer;
+use pallet_logion_loc::Hasher;
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_logion_loc::ItemsParams;
+use pallet_multisig::Timepoint;
+use sp_io::hashing::sha2_256;
+
+#[cfg(feature = "runtime-benchmarks")]
+pub struct VoteLocSetup;
+#[cfg(feature = "runtime-benchmarks")]
+impl LocSetup<LocId, AccountId> for VoteLocSetup {
+
+	fn setup_vote_loc() -> (LocId, AccountId) {
+		let loc_id: LocId = 0;
+		let requester: AccountId = [0u8;32].into();
+		Balances::make_free_balance_be(&requester, Balance::max_value());
+		let legal_officer_id = LoAuthorityList::legal_officers()[0].clone();
+		let _ = LogionLoc::create_polkadot_identity_loc(
+			RuntimeOrigin::signed(requester),
+			loc_id,
+			legal_officer_id.clone(),
+			0u32.into(),
+			ItemsParams::empty(),
+		);
+		let _ = LogionLoc::close(
+			RuntimeOrigin::signed(legal_officer_id.clone()),
+			loc_id,
+			None,
+			false,
+		);
+		(loc_id, legal_officer_id)
+	}
+}
+
+
+parameter_types! {
+	#[derive(Debug, PartialEq, TypeInfo)]
+	pub const MaxBallots: u32 = 12;
+}
+
+impl pallet_logion_vote::Config for Runtime {
+	type LocId = LocId;
+	type RuntimeEvent = RuntimeEvent;
+	type IsLegalOfficer = LoAuthorityList;
+	type LocValidity = LogionLoc;
+	type LocQuery = LogionLoc;
+	type LegalOfficerCreation = LoAuthorityList;
+	type MaxBallots = MaxBallots;
+	type WeightInfo = weights::pallet_logion_vote::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type LocSetup = VoteLocSetup;
 }
 
 parameter_types! {
@@ -599,11 +968,42 @@ impl pallet_treasury::Config<CommunityTreasuryType> for Runtime {
 	type PayoutPeriod = SpendPayoutPeriod;
 }
 
+pub struct RewardDistributor;
+impl logion_shared::RewardDistributor<NegativeImbalance, Balance, AccountId, RuntimeOrigin, LoAuthorityList>
+for RewardDistributor
+{
+	fn payout_community_treasury(reward: NegativeImbalance) {
+		if reward != NegativeImbalance::zero() {
+			Balances::resolve_creating(&CommunityTreasuryPalletId::get().into_account_truncating(), reward);
+		}
+	}
+
+	fn payout_logion_treasury(reward: NegativeImbalance) {
+		if reward != NegativeImbalance::zero() {
+			Balances::resolve_creating(&LogionTreasuryPalletId::get().into_account_truncating(), reward);
+		}
+	}
+
+	fn payout_to(reward: NegativeImbalance, account: &AccountId) {
+		if reward != NegativeImbalance::zero() {
+			Balances::resolve_creating(account, reward);
+		}
+	}
+}
+
+impl pallet_block_reward::Config for Runtime {
+	type Currency = Balances;
+	type RewardAmount = InflationAmount;
+	type RewardDistributor = RewardDistributor;
+	type DistributionKey = InflationDistributionKey;
+	type IsLegalOfficer = LoAuthorityList;
+}
+
 impl pallet_utility::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
-	type WeightInfo = pallet_utility::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_utility::WeightInfo<Runtime>;
 }
 
 parameter_types! {
@@ -659,18 +1059,40 @@ construct_runtime!(
 
 		// Vesting.
 		Vesting: pallet_vesting = 50,
+
+		// Logion.
+		LogionLoc: pallet_logion_loc = 60,
+		BlockReward: pallet_block_reward = 61,
+		LoAuthorityList: pallet_lo_authority_list = 62,
+		Vote: pallet_logion_vote = 63,
+		Recovery: pallet_recovery = 64,
+		VerifiedRecovery: pallet_verified_recovery = 65,
+		Multisig:  pallet_multisig = 66,
+		Vault: pallet_logion_vault = 67,
+
 	}
 );
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
 	frame_benchmarking::define_benchmarks!(
+		[frame_benchmarking, BaselineBench::<Runtime>]
 		[frame_system, SystemBench::<Runtime>]
 		[pallet_balances, Balances]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
 		[pallet_collator_selection, CollatorSelection]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_lo_authority_list, LoAuthorityList]
+		[pallet_logion_loc, LogionLoc]
+		[pallet_logion_vote, Vote]
+		[pallet_multisig, Multisig]
+		[pallet_recovery, Recovery]
+		[pallet_sudo, Sudo]
+		[pallet_timestamp, Timestamp]
+		[pallet_validator_set, ValidatorSet]
+		[pallet_verified_recovery, VerifiedRecovery]
+		[pallet_utility, Utility]
 	);
 }
 
@@ -815,6 +1237,16 @@ impl_runtime_apis! {
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
+		}
+	}
+
+	impl pallet_logion_loc::runtime_api::FeesApi<Block, Balance, TokenIssuance> for Runtime {
+		fn query_file_storage_fee(num_of_entries: u32, tot_size: u32) -> Balance {
+			LogionLoc::calculate_fee(num_of_entries, tot_size)
+		}
+
+		fn query_certificate_fee(token_issuance: TokenIssuance) -> Balance {
+			LogionLoc::calculate_certificate_fee(token_issuance)
 		}
 	}
 
