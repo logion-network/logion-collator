@@ -20,3 +20,4 @@ id = 2000
   name = "collator01"
   chain = "local"
   command = "./target/release/logion"
+  ws_port = 9944
