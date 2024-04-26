@@ -1,19 +1,6 @@
 # Logion Collator Node
 
-This project contains Logion's collator node.
-
-Logion is now a parachain. However, it still relies on a production-ready (i.e. mainnet) Substrate-based
-solochain (see runtime [here](https://github.com/logion-network/logion-node)). The purpose of
-this project is to follow the evolution of Logion's parachain runtime in the process of
-migrating from the solochain to the parachain.
-
-## What to expect next?
-
-Logion's [white paper](https://docs.logion.network/logion-white-paper/) describes all the aspects that
-will be/are implemented by this runtime.
-
-In particular, you will find there a description of Logion's [tokenomics](https://docs.logion.network/logion-white-paper/tokenomics/introduction-to-logion-tokenomics)
-and future [governance](https://docs.logion.network/logion-white-paper/governance/the-logion-governance-model-in-a-nutshell).
+This project contains Logion's collator node and runtime.
 
 ## Test locally
 
