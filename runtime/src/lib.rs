@@ -16,8 +16,8 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, H160, H256, OpaqueMetadata};
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{
 	AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentifyAccount,
-	IdentityLookup, One, Verify
-}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature};
+	IdentityLookup, One, Verify, Bounded,
+}, transaction_validity::{TransactionSource, TransactionValidity}, ApplyExtrinsicResult, MultiSignature, Perquintill, FixedPointNumber};
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -46,7 +46,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
 };
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter, Multiplier};
+use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -444,7 +444,10 @@ impl OnUnbalanced<NegativeImbalance> for DealWithInclusionFees {
 pub type WeightToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
 
 parameter_types! {
-	pub FeeMultiplier: Multiplier = Multiplier::one();
+	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(75, 1000_000);
+	pub MinimumMultiplier: Multiplier = Multiplier::one();
+	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 
 	// The multiplier is set such as inclusion fees are ~2 LGNT on average.
 	// Spreadsheet in /docs/inclusion_fees.ods contains the model that lead
@@ -455,13 +458,23 @@ parameter_types! {
 	pub const WeightToFeeMultiplier: Balance = 5_089_484_898;
 }
 
+/// This instance of TargetedFeeAdjustment is basically the same as
+/// `polkadot_runtime_common::SlowAdjustingFeeUpdate`, with MinimumMultiplier = 1.
+pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
+	R,
+	TargetBlockFullness,
+	AdjustmentVariable,
+	MinimumMultiplier,
+	MaximumMultiplier,
+>;
+
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithInclusionFees>;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
 	type LengthToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
-	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
+	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 }
 
 parameter_types! {
