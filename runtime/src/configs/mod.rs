@@ -24,6 +24,7 @@
 // For more information, please refer to <http://unlicense.org>
 
 mod xcm_config;
+mod logion_config;
 
 // Substrate and Polkadot dependencies
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
@@ -52,7 +53,7 @@ use sp_version::RuntimeVersion;
 use xcm::latest::prelude::BodyId;
 
 // Local module imports
-use super::{weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight}, AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, Hash, MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys, System, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, BLOCK_PROCESSING_VELOCITY, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, RELAY_CHAIN_SLOT_DURATION_MILLIS, SLOT_DURATION, UNINCLUDED_SEGMENT_CAPACITY, VERSION, LoAuthorityList, CommunityTreasuryPalletId, LogionTreasuryPalletId};
+use super::{weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight}, AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, Hash, MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys, System, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, BLOCK_PROCESSING_VELOCITY, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, RELAY_CHAIN_SLOT_DURATION_MILLIS, SLOT_DURATION, UNINCLUDED_SEGMENT_CAPACITY, VERSION, LoAuthorityList };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
 // Logion imports
@@ -61,6 +62,7 @@ use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment, CurrencyAdap
 use sp_runtime::traits::AccountIdConversion;
 use crate::weights;
 use crate::{LGNT, NANO_LGNT, MILLI_LGNT};
+use crate::configs::logion_config::{CommunityTreasuryPalletId, LogionTreasuryPalletId};
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
