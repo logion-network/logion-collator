@@ -1,4 +1,3 @@
-use codec::{Decode, Encode, MaxEncodedLen};
 use cumulus_primitives_core::Weight;
 use frame_support::{PalletId, parameter_types};
 use frame_support::pallet_prelude::{ConstU32, TypeInfo};
@@ -21,7 +20,7 @@ use sp_io::hashing::sha2_256;
 use sp_runtime::Permill;
 use sp_runtime::traits::{AccountIdConversion, ConvertInto, IdentityLookup};
 use sp_std::prelude::*;
-use crate::{DAYS, LGNT};
+use crate::{DAYS, LGNT, Region};
 use crate::{AccountId, Balance, Balances, BlockNumber, CommunityTreasury, EthereumAddress, Hash, LoAuthorityList, LocId, LogionLoc, LogionTreasury, OriginCaller, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, SponsorshipId, System, TokenIssuance, weights};
 use crate::configs::{CertificateFee, CertificateFeeDistributionKey, FileStorageByteFee, FileStorageEntryFee, FileStorageFeeDistributionKey, IdentityLocLegalFeeDistributionKey, InflationAmount, InflationDistributionKey, OtherLocLegalFeeDistributionKey, RecurentFeeDistributionKey, RewardDistributor, ValueFeeDistributionKey};
 
@@ -31,11 +30,6 @@ parameter_types! {
 	pub const MaxWellKnownNodes: u32 = 100;
 	#[derive(Debug, Eq, Clone, PartialEq, TypeInfo, PartialOrd, Ord)]
 	pub const MaxPeerIdLength: u32 = 128;
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, Copy, MaxEncodedLen)]
-pub enum Region {
-	Europe,
 }
 
 impl sp_std::str::FromStr for Region {

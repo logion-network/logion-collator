@@ -10,6 +10,7 @@ pub mod apis;
 mod configs;
 mod weights;
 
+use codec::{Decode, Encode, MaxEncodedLen};
 use sp_core::H160;
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, traits::{
 	BlakeTwo256, IdentifyAccount,
@@ -27,6 +28,7 @@ use frame_support::{
 		constants::WEIGHT_REF_TIME_PER_SECOND, Weight,
 	},
 };
+use frame_support::pallet_prelude::TypeInfo;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill, Percent};
 
@@ -98,6 +100,11 @@ pub type UncheckedExtrinsic =
 
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo, Copy, MaxEncodedLen)]
+pub enum Region {
+	Europe,
+}
 
 /// All migrations of the runtime, aside from the ones declared in the pallets.
 ///
