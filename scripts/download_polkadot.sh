@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION=polkadot-v1.8.0
+VERSION=polkadot-v1.10.0
 
 cd bin
 rm -f polkadot*

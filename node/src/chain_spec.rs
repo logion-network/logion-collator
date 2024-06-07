@@ -1,5 +1,6 @@
 use cumulus_primitives_core::ParaId;
-use logion_runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, LGNT, SS58Prefix};
+use logion_runtime as runtime;
+use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, LGNT, SS58Prefix};
 use pallet_lo_authority_list::GenesisHostData;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;
@@ -58,16 +59,15 @@ where
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> logion_runtime::SessionKeys {
-	logion_runtime::SessionKeys { aura: keys }
+pub fn template_session_keys(keys: AuraId) -> runtime::SessionKeys {
+	runtime::SessionKeys { aura: keys }
 }
 
 const DEFAULT_TEST_BALANCE: Balance = 100_000_000_000_000_000_000_000;
 
 pub fn development_config() -> ChainSpec {
     ChainSpec::builder(
-        logion_runtime::WASM_BINARY
-            .expect("WASM binary was not built, please build it!"),
+        runtime::WASM_BINARY.expect("WASM binary was not built, please build it!"),
         Extensions {
             relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
             para_id: test_parachain_id().into(),
