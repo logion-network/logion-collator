@@ -37,7 +37,7 @@ use frame_support::{
 	weights::{ConstantMultiplier, Weight},
 	PalletId,
 };
-use frame_support::traits::{Contains, Currency, Imbalance};
+use frame_support::traits::{Currency, Imbalance};
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
@@ -62,7 +62,7 @@ use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment, CurrencyAdap
 use sp_runtime::traits::AccountIdConversion;
 use crate::weights;
 use crate::{LGNT, NANO_LGNT, MILLI_LGNT};
-use crate::configs::logion_config::{CommunityTreasuryPalletId, LogionTreasuryPalletId};
+use crate::configs::logion_config::{CommunityTreasuryPalletId, LogionTreasuryPalletId, BaseCallFilter};
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
@@ -92,18 +92,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const SS58Prefix: u16 = 2021;
-}
-
-pub struct BaseCallFilter;
-impl Contains<RuntimeCall> for BaseCallFilter {
-	fn contains(call: &RuntimeCall) -> bool {
-		match call {
-			RuntimeCall::Recovery(pallet_recovery::Call::create_recovery{ .. }) => false,
-			RuntimeCall::Multisig(pallet_multisig::Call::approve_as_multi{ .. }) => false,
-			RuntimeCall::Multisig(pallet_multisig::Call::as_multi{ .. }) => false,
-			_ => true
-		}
-	}
 }
 
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from

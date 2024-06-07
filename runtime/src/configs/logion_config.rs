@@ -2,7 +2,7 @@ use cumulus_primitives_core::Weight;
 use frame_support::{PalletId, parameter_types};
 use frame_support::pallet_prelude::{ConstU32, TypeInfo};
 use frame_support::traits::tokens::{PayFromAccount, UnityAssetBalanceConversion};
-use frame_support::traits::WithdrawReasons;
+use frame_support::traits::{Contains, WithdrawReasons};
 use frame_system::EnsureRoot;
 use logion_shared::{CreateRecoveryCallFactory, MultisigApproveAsMultiCallFactory, MultisigAsMultiCallFactory};
 #[cfg(feature = "runtime-benchmarks")]
@@ -23,6 +23,18 @@ use sp_std::prelude::*;
 use crate::{DAYS, LGNT, Region};
 use crate::{AccountId, Balance, Balances, BlockNumber, CommunityTreasury, EthereumAddress, Hash, LoAuthorityList, LocId, LogionLoc, LogionTreasury, OriginCaller, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, SponsorshipId, System, TokenIssuance, weights};
 use crate::configs::{CertificateFee, CertificateFeeDistributionKey, FileStorageByteFee, FileStorageEntryFee, FileStorageFeeDistributionKey, IdentityLocLegalFeeDistributionKey, InflationAmount, InflationDistributionKey, OtherLocLegalFeeDistributionKey, RecurentFeeDistributionKey, RewardDistributor, ValueFeeDistributionKey};
+
+pub struct BaseCallFilter;
+impl Contains<RuntimeCall> for BaseCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::Recovery(pallet_recovery::Call::create_recovery{ .. }) => false,
+			RuntimeCall::Multisig(pallet_multisig::Call::approve_as_multi{ .. }) => false,
+			RuntimeCall::Multisig(pallet_multisig::Call::as_multi{ .. }) => false,
+			_ => true
+		}
+	}
+}
 
 parameter_types! {
 	#[derive(Debug, Eq, Clone, PartialEq, TypeInfo)]
