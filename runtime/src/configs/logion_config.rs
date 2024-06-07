@@ -20,9 +20,9 @@ use sp_io::hashing::sha2_256;
 use sp_runtime::Permill;
 use sp_runtime::traits::{AccountIdConversion, ConvertInto, IdentityLookup};
 use sp_std::prelude::*;
-use crate::{DAYS, LGNT, Region};
+use crate::{DAYS, Region};
 use crate::{AccountId, Balance, Balances, BlockNumber, CommunityTreasury, EthereumAddress, Hash, LoAuthorityList, LocId, LogionLoc, LogionTreasury, OriginCaller, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, SponsorshipId, System, TokenIssuance, weights};
-use crate::configs::{CertificateFee, CertificateFeeDistributionKey, FileStorageByteFee, FileStorageEntryFee, FileStorageFeeDistributionKey, IdentityLocLegalFeeDistributionKey, InflationAmount, InflationDistributionKey, OtherLocLegalFeeDistributionKey, RecurentFeeDistributionKey, RewardDistributor, ValueFeeDistributionKey};
+use crate::configs::tokenomics::{LGNT, CertificateFee, CertificateFeeDistributionKey, FileStorageByteFee, FileStorageEntryFee, FileStorageFeeDistributionKey, IdentityLocLegalFeeDistributionKey, InflationAmount, InflationDistributionKey, OtherLocLegalFeeDistributionKey, RecurentFeeDistributionKey, RewardDistributor, ValueFeeDistributionKey};
 
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
