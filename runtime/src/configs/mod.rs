@@ -23,46 +23,45 @@
 //
 // For more information, please refer to <http://unlicense.org>
 
-mod xcm_config;
-mod logion_config;
-
 // Substrate and Polkadot dependencies
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 use frame_support::{
 	derive_impl,
 	dispatch::DispatchClass,
-	parameter_types,
-	traits::{ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, TransformOrigin, OnUnbalanced},
-	weights::{ConstantMultiplier, Weight},
 	PalletId,
+	parameter_types,
+	traits::{ConstBool, ConstU32, ConstU64, ConstU8, EitherOfDiverse, TransformOrigin},
+	weights::{ConstantMultiplier, Weight},
 };
-use frame_support::traits::{Contains, Currency, Imbalance};
 use frame_system::{
-	limits::{BlockLength, BlockWeights},
 	EnsureRoot,
+	limits::{BlockLength, BlockWeights},
 };
+// Logion imports
+use pallet_transaction_payment::{CurrencyAdapter};
 use pallet_xcm::{EnsureXcm, IsVoiceOfBody};
 use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 use polkadot_runtime_common::{
-	xcm_sender::NoPriceForMessageDelivery, BlockHashCount,
+	BlockHashCount, xcm_sender::NoPriceForMessageDelivery,
 };
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_runtime::{Perbill, Percent, Perquintill, FixedPointNumber, traits::{Bounded, One }};
+use sp_runtime::{Perbill};
 use sp_version::RuntimeVersion;
 use xcm::latest::prelude::BodyId;
 
-// Local module imports
-use super::{weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight}, AccountId, Aura, Balance, Balances, Block, BlockNumber, CollatorSelection, Hash, MessageQueue, Nonce, PalletInfo, ParachainSystem, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys, System, XcmpQueue, AVERAGE_ON_INITIALIZE_RATIO, BLOCK_PROCESSING_VELOCITY, EXISTENTIAL_DEPOSIT, HOURS, MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO, RELAY_CHAIN_SLOT_DURATION_MILLIS, SLOT_DURATION, UNINCLUDED_SEGMENT_CAPACITY, VERSION, LoAuthorityList };
 use xcm_config::{RelayLocation, XcmOriginToTransactDispatchOrigin};
 
-// Logion imports
-use logion_shared::{DistributionKey, RewardDistributor as RewardDistributorTrait};
-use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment, CurrencyAdapter};
-use sp_runtime::traits::AccountIdConversion;
+use crate::configs::logion_config::BaseCallFilter;
+use crate::configs::tokenomics::{DealWithInclusionFees, SlowAdjustingFeeUpdate, WeightToFee, WeightToFeeMultiplier};
 use crate::weights;
-use crate::{LGNT, NANO_LGNT, MILLI_LGNT};
-use crate::configs::logion_config::{CommunityTreasuryPalletId, LogionTreasuryPalletId};
+
+// Local module imports
+use super::{AccountId, Aura, AVERAGE_ON_INITIALIZE_RATIO, Balance, Balances, Block, BLOCK_PROCESSING_VELOCITY, BlockNumber, CollatorSelection, EXISTENTIAL_DEPOSIT, Hash, HOURS, MAXIMUM_BLOCK_WEIGHT, MessageQueue, Nonce, NORMAL_DISPATCH_RATIO, PalletInfo, ParachainSystem, RELAY_CHAIN_SLOT_DURATION_MILLIS, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeTask, Session, SessionKeys, SLOT_DURATION, System, UNINCLUDED_SEGMENT_CAPACITY, VERSION, weights::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight}, XcmpQueue};
+
+mod xcm_config;
+mod logion_config;
+pub mod tokenomics;
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
@@ -92,18 +91,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 	pub const SS58Prefix: u16 = 2021;
-}
-
-pub struct BaseCallFilter;
-impl Contains<RuntimeCall> for BaseCallFilter {
-	fn contains(call: &RuntimeCall) -> bool {
-		match call {
-			RuntimeCall::Recovery(pallet_recovery::Call::create_recovery{ .. }) => false,
-			RuntimeCall::Multisig(pallet_multisig::Call::approve_as_multi{ .. }) => false,
-			RuntimeCall::Multisig(pallet_multisig::Call::as_multi{ .. }) => false,
-			_ => true
-		}
-	}
 }
 
 /// The default types are being injected by [`derive_impl`](`frame_support::derive_impl`) from
@@ -177,133 +164,6 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
-
-parameter_types! {
-    pub const InclusionFeesDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(35),
-        community_treasury_percent: Percent::from_percent(30),
-        logion_treasury_percent: Percent::from_percent(35),
-        loc_owner_percent: Percent::from_percent(0),
-    };
-
-	// Inflation: I=0,05 (5%)
-	// Total supply: N=10^9
-	// Block rate: B=12 (Number of seconds between 2 blocks)
-	// The reward can be calculated as follows: N * (I / (3600 * 24 * 365 / B))
-	// We thus mint 19 LGNT every block
-    pub const InflationAmount: Balance = 19 * LGNT;
-    pub const InflationDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(35),
-        community_treasury_percent: Percent::from_percent(30),
-        logion_treasury_percent: Percent::from_percent(35),
-        loc_owner_percent: Percent::from_percent(0),
-    };
-
-	pub const FileStorageByteFee: Balance = 2000 * NANO_LGNT; // 2.0 LGNT per MB -> 0.000002 LGNT per B
-	pub const FileStorageEntryFee: Balance = 0;
-	pub const FileStorageFeeDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(80),
-        community_treasury_percent: Percent::from_percent(20),
-        logion_treasury_percent: Percent::from_percent(0),
-        loc_owner_percent: Percent::from_percent(0),
-    };
-
-	pub const CertificateFee: Balance = 40 * MILLI_LGNT; // 0.04 LGNT per token
-    pub const CertificateFeeDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(20),
-        community_treasury_percent: Percent::from_percent(80),
-        logion_treasury_percent: Percent::from_percent(0),
-        loc_owner_percent: Percent::from_percent(0),
-    };
-
-	pub const ValueFeeDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(0),
-        community_treasury_percent: Percent::from_percent(0),
-        logion_treasury_percent: Percent::from_percent(100),
-        loc_owner_percent: Percent::from_percent(0),
-    };
-
-    pub const RecurentFeeDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(0),
-        community_treasury_percent: Percent::from_percent(0),
-        logion_treasury_percent: Percent::from_percent(95),
-        loc_owner_percent: Percent::from_percent(5),
-    };
-
-    pub const IdentityLocLegalFeeDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(0),
-        community_treasury_percent: Percent::from_percent(0),
-        logion_treasury_percent: Percent::from_percent(100),
-        loc_owner_percent: Percent::from_percent(0),
-    };
-
-    pub const OtherLocLegalFeeDistributionKey: DistributionKey = DistributionKey {
-        legal_officers_percent: Percent::from_percent(0),
-        community_treasury_percent: Percent::from_percent(0),
-        logion_treasury_percent: Percent::from_percent(0),
-        loc_owner_percent: Percent::from_percent(100),
-    };
-}
-pub type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
-
-pub struct RewardDistributor;
-impl logion_shared::RewardDistributor<NegativeImbalance, Balance, AccountId, RuntimeOrigin, LoAuthorityList>
-for RewardDistributor
-{
-	fn payout_community_treasury(reward: NegativeImbalance) {
-		if reward != NegativeImbalance::zero() {
-			Balances::resolve_creating(&CommunityTreasuryPalletId::get().into_account_truncating(), reward);
-		}
-	}
-
-	fn payout_logion_treasury(reward: NegativeImbalance) {
-		if reward != NegativeImbalance::zero() {
-			Balances::resolve_creating(&LogionTreasuryPalletId::get().into_account_truncating(), reward);
-		}
-	}
-
-	fn payout_to(reward: NegativeImbalance, account: &AccountId) {
-		if reward != NegativeImbalance::zero() {
-			Balances::resolve_creating(account, reward);
-		}
-	}
-}
-
-pub struct DealWithInclusionFees;
-impl OnUnbalanced<NegativeImbalance> for DealWithInclusionFees {
-
-	fn on_nonzero_unbalanced(fees: NegativeImbalance) {
-
-		RewardDistributor::distribute(fees, InclusionFeesDistributionKey::get());
-	}
-}
-
-parameter_types! {
-	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
-	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(75, 1000_000);
-	pub MinimumMultiplier: Multiplier = Multiplier::one();
-	pub MaximumMultiplier: Multiplier = Bounded::max_value();
-
-	// The multiplier is set such as inclusion fees are ~2 LGNT on average.
-	// Spreadsheet in /docs/inclusion_fees.ods contains the model that lead
-	// to this result.
-	//
-	// This value will probably have to be adjusted once we have more
-	// usage statistics available.
-	pub const WeightToFeeMultiplier: Balance = 5_089_484_898;
-}
-
-/// This instance of TargetedFeeAdjustment is basically the same as
-/// `polkadot_runtime_common::SlowAdjustingFeeUpdate`, with MinimumMultiplier = 1.
-pub type SlowAdjustingFeeUpdate<R> = TargetedFeeAdjustment<
-	R,
-	TargetBlockFullness,
-	AdjustmentVariable,
-	MinimumMultiplier,
-	MaximumMultiplier,
->;
-
-pub type WeightToFee = ConstantMultiplier<Balance, WeightToFeeMultiplier>;
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;

@@ -1,6 +1,7 @@
 use cumulus_primitives_core::ParaId;
 use logion_runtime as runtime;
-use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, LGNT, SS58Prefix};
+use runtime::{AccountId, AuraId, Signature, EXISTENTIAL_DEPOSIT, Balance, SS58Prefix};
+use runtime::configs::tokenomics::{LGNT};
 use pallet_lo_authority_list::GenesisHostData;
 use sc_chain_spec::{ChainSpecExtension, ChainSpecGroup};
 use sc_service::ChainType;

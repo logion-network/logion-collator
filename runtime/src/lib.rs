@@ -7,7 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 pub mod apis;
-mod configs;
+pub mod configs;
 mod weights;
 
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -196,11 +196,6 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used by
 /// `Operational` extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
-pub const NANO_LGNT: Balance = 1_000_000_000;
-pub const MICRO_LGNT: Balance = 1_000 * NANO_LGNT;
-pub const MILLI_LGNT: Balance = 1_000 * MICRO_LGNT;
-pub const LGNT: Balance = 1_000 * MILLI_LGNT;
 
 /// We allow for 0.5 of a second of compute with a 12 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
