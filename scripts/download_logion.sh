@@ -2,7 +2,7 @@
 
 set -e
 
-VERSION=v0.3.0
+VERSION=v0.4.0
 
 mkdir -p target/release/
 cd target/release/
